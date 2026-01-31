@@ -25,18 +25,40 @@
 
     <div id="response" style="margin-top: 20px;"></div>
 
-    <script>
-      function sendMessage() {
-        const input = document.getElementById("userInput").value;
-        const responseDiv = document.getElementById("response");
+<script>
+  async function sendMessage() {
+    const inputEl = document.getElementById("userInput");
+    const responseDiv = document.getElementById("response");
+    const message = inputEl.value;
 
-        if (!input) {
-          responseDiv.innerHTML = "<em>Escribe algo.</em>";
-          return;
-        }
+    if (!message) {
+      responseDiv.innerHTML = "<em>Escribe algo.</em>";
+      return;
+    }
 
-        responseDiv.innerHTML = "<strong>BRKR:</strong> Te he leído. Pronto pensaré.";
-      }
-    </script>
+    responseDiv.innerHTML = "<em>Pensando…</em>";
+
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await r.json();
+
+      const reply =
+        data.reply ||
+        data.message ||
+        data.output ||
+        JSON.stringify(data);
+
+      responseDiv.innerHTML = `<strong>BRKR:</strong> ${reply}`;
+    } catch (err) {
+      responseDiv.innerHTML = `<strong>Error:</strong> ${String(err)}`;
+    }
+  }
+</script>
+
   </body>
 </html>
