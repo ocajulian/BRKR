@@ -45,7 +45,10 @@
         body: JSON.stringify({ message }),
       });
 
-      const data = await r.json();
+      const raw = await r.text();
+responseDiv.innerHTML = `<pre>${raw}</pre>`;
+return;
+
 
       const reply =
         data.reply ||
