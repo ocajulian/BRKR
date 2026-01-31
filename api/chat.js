@@ -8,5 +8,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ reply: "Missing message" });
   }
 
-  return res.status(200).json({ reply: `OK ✅ Recibí: ${message}` });
+  return res.status(200).json({
+    reply: `OK ✅ Recibí: ${message}`,
+  });
 }
