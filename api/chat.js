@@ -43,10 +43,24 @@ export default async function handler(req, res) {
       return res.status(500).json({ reply: raw });
     }
 
-    const data = JSON.parse(raw);
-    const text = data.output_text || "No pude generar respuesta.";
+  const data = JSON.parse(raw);
 
-    return res.status(200).json({ reply: text });
+// Extraer texto de forma más robusta
+const text =
+  data.output_text ||
+  data?.output?.[0]?.content?.map((c) => c.text).filter(Boolean).join("\n") ||
+  data?.output?.[0]?.content?.[0]?.text ||
+  "";
+
+// Si sigue vacío, devolvemos un resumen del raw para depurar (sin romper el frontend)
+if (!text.trim()) {
+  return res.status(200).json({
+    reply: "No llegó texto del modelo. Pega esto aquí para revisar:\n" + raw.slice(0, 1500),
+  });
+}
+
+return res.status(200).json({ reply: text });
+
   } catch (e) {
     return res.status(500).json({ reply: String(e) });
   }
