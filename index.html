@@ -5,8 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>BRKR</title>
   </head>
-  <body style="font-family: system-ui; padding: 40px;">
+
+  <body style="font-family: system-ui; padding: 40px; max-width: 600px;">
     <h1>BRKR</h1>
-    <p>Deploy funcionando ✅</p>
+
+    <input
+      id="userInput"
+      type="text"
+      placeholder="Escribe aquí..."
+      style="width: 100%; padding: 10px; font-size: 16px;"
+    />
+
+    <button
+      onclick="sendMessage()"
+      style="margin-top: 10px; padding: 10px; font-size: 16px;"
+    >
+      Enviar
+    </button>
+
+    <div id="response" style="margin-top: 20px;"></div>
+
+    <script>
+      function sendMessage() {
+        const input = document.getElementById("userInput").value;
+        const responseDiv = document.getElementById("response");
+
+        if (!input) {
+          responseDiv.innerHTML = "<em>Escribe algo.</em>";
+          return;
+        }
+
+        responseDiv.innerHTML = "<strong>BRKR:</strong> Te he leído. Pronto pensaré.";
+      }
+    </script>
   </body>
 </html>
