@@ -297,6 +297,14 @@
         font-weight: 500;
       }
 
+      .bubble-meta {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed var(--border);
+      }
+
       .composer {
         border-top: 1px solid var(--border);
         background: var(--panel);
@@ -884,7 +892,7 @@
         });
       }
 
-      function addBubble(role, content) {
+      function addBubble(role, content, meta = null) {
         const isUser = role === "user";
 
         const row = document.createElement("div");
@@ -897,19 +905,27 @@
         label.className = "bubble-label";
         label.textContent = isUser ? "You" : "BRKR";
 
+        bubble.appendChild(label);
+
+        if (!isUser && meta) {
+          const metaLine = document.createElement("div");
+          metaLine.className = "bubble-meta";
+          metaLine.textContent = `Stage: ${meta.stage_used || "—"} · Mode used: ${meta.mode_used || "—"}`;
+          bubble.appendChild(metaLine);
+        }
+
         const body = document.createElement("div");
         body.innerHTML = isUser
           ? escapeHtml(content).replace(/\n/g, "<br>")
           : formatReply(content);
 
-        bubble.appendChild(label);
         bubble.appendChild(body);
         row.appendChild(bubble);
         messagesEl.appendChild(row);
       }
 
       function addSystemWelcome(text) {
-        addBubble("assistant", text);
+        addBubble("assistant", text, null);
       }
 
       function getWelcomeMessage() {
@@ -963,7 +979,9 @@
         if (!chat.conversation || chat.conversation.length === 0) {
           addSystemWelcome(getWelcomeMessage());
         } else {
-          chat.conversation.forEach((msg) => addBubble(msg.role, msg.content));
+          chat.conversation.forEach((msg) => {
+            addBubble(msg.role, msg.content, msg.meta || null);
+          });
         }
 
         messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -1061,7 +1079,10 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message,
-              history: chat.conversation,
+              history: chat.conversation.map((m) => ({
+                role: m.role,
+                content: m.content
+              })),
               language: lang,
               stage: chat.stage,
               mode: chat.mode
@@ -1074,18 +1095,22 @@
           try {
             data = JSON.parse(raw);
           } catch {
-            chat.conversation.push({ role: "assistant", content: raw });
+            chat.conversation.push({ role: "assistant", content: raw, meta: null });
             await persistCurrentState();
             setLoading(false);
             return;
           }
 
           const reply = data.reply || "No response.";
-          chat.conversation.push({ role: "assistant", content: reply });
+          chat.conversation.push({
+            role: "assistant",
+            content: reply,
+            meta: data.meta || null
+          });
           await persistCurrentState();
         } catch (err) {
           const msg = `Error: ${String(err)}`;
-          chat.conversation.push({ role: "assistant", content: msg });
+          chat.conversation.push({ role: "assistant", content: msg, meta: null });
           await persistCurrentState();
         } finally {
           setLoading(false);
