@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   const masterPrompt =
     process.env.BRKR_SYSTEM_PROMPT ||
-    "Eres BRKR. IA de ejecución business. Directo, claro y accionable.";
+    "Eres BRKR. IA de ejecución business. Directo, claro y accionable. Nunca respondas como chatbot genérico. Siempre cierra con una acción, decisión contextual o pregunta que desbloquee avance real.";
 
   const stageAliases = {
     IDEA: "IDEA",
@@ -38,9 +38,9 @@ export default async function handler(req, res) {
 
   const stagePrompts = {
     IDEA:
-      "ETAPA IDEA: define problema, ICP y por qué ahora. No avances sin claridad. Si hay vaguedad, corrígela.",
+      "ETAPA IDEA: define problema, ICP y por qué ahora. No avances sin claridad. Si hay vaguedad, corrígela. No derives a marketing ni a construcción demasiado pronto.",
     VALIDACION:
-      "ETAPA VALIDACION: busca evidencia real. No aceptes intuiciones como prueba. Prioriza señal antes que entusiasmo.",
+      "ETAPA VALIDACION: busca evidencia real. No aceptes intuiciones como prueba. Prioriza señal antes que entusiasmo. Si hablas de costes, modela costes de validación, no de empresa completa.",
     OFERTA:
       "ETAPA OFERTA: define la oferta mínima para validar pago real en menos de 48h. Prioriza solo: 1 producto, 1 problema, 1 promesa, 1 precio y 1 canal directo. Prohibido añadir: múltiples productos, bundles, comunidad, suscripciones, descuentos, testimonios, encuestas, contenido extra, features adicionales o mejoras de UX. Prohibido proponer Ads en esta etapa si el test puede hacerse con contacto directo, red personal, DMs, comunidades o outreach manual a 20 personas. La única señal que importa es: alguien intenta pagar. Si propones algo más complejo, elimínalo.",
     ADS:
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     CFO:
       "MODO CFO: actúas como CFO. Modela el peor escenario realista para 30 días. Asume 0 ingresos. No expliques teoría. No uses placeholders. No inventes equipos grandes ni costes enterprise sin motivo. Da rangos razonables para un emprendedor solo o equipo pequeño. Siempre responde con: 1) supuestos, 2) coste MVP mínimo, 3) coste adquisición/test, 4) coste herramientas, 5) coste tiempo del fundador, 6) total 30 días, 7) decisión final obligatoria: elige SOLO una opción (GO, ITERAR o STOP). No listes opciones. No expliques las tres. Toma una decisión clara basada en el escenario. Regla: en etapa VALIDACIÓN, STOP solo si el coste es alto (>3000€) y no hay forma de reducirlo; ITERAR si el coste es moderado (500€–3000€) y puede optimizarse; GO si el coste es bajo (<500€) y permite validar rápido.",
     CTO:
-      "MODO CTO: define el MVP mínimo para obtener señal real. Di qué construir, qué no construir, riesgos técnicos y stack mínimo. Evita sobreconstrucción.",
+      "MODO CTO: define el MVP mínimo para obtener señal real. Di qué construir, qué no construir, riesgos técnicos y stack mínimo. Evita sobreconstrucción. No propongas campañas, testimonios, encuestas ni extras de marketing.",
     CMO:
       "MODO CMO: elige foco de adquisición. Un canal principal, un objetivo medible y una métrica clara. Nada de marketing teatro.",
     SCRAPPING:
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
             typeof m.content === "string" &&
             m.content.trim()
         )
-        .slice(-20)
+        .slice(-16)
         .map((m) => ({
           role: m.role,
           content: m.content,
@@ -121,150 +121,220 @@ export default async function handler(req, res) {
       FORMACION: 0,
     };
 
+    // CFO
     scores.CFO += scoreKeywords(combined, [
+      "cost",
+      "costs",
+      "pricing",
+      "price",
+      "budget",
+      "budgets",
+      "estimate",
+      "estimation",
+      "worst-case",
+      "worst case",
+      "scenario",
+      "cashflow",
+      "runway",
+      "margin",
+      "profitability",
+      "viability",
+      "financial",
+      "finance",
       "coste",
       "costes",
       "costo",
       "costos",
       "precio",
-      "pricing",
-      "cuánto cuesta",
-      "cuanto cuesta",
+      "precios",
+      "presupuesto",
       "estimación",
       "estimacion",
-      "escenario",
-      "presupuesto",
-      "runway",
-      "cashflow",
+      "peor escenario",
       "flujo de caja",
       "margen",
       "rentabilidad",
       "viabilidad",
-      "worst-case",
-      "peor escenario",
-      "pérdida",
-      "perdida",
     ]);
 
+    // CTO
     scores.CTO += scoreKeywords(combined, [
       "mvp",
-      "desarrollar",
-      "construir",
+      "minimum viable product",
       "build",
-      "no-code",
-      "nocode",
+      "build this",
+      "develop",
+      "development",
+      "technical",
+      "tech",
       "software",
       "stack",
-      "arquitectura",
+      "architecture",
+      "feature",
+      "features",
+      "api",
+      "integration",
+      "integrations",
+      "automation",
+      "construir",
+      "desarrollar",
+      "desarrollo",
+      "técnico",
+      "tecnico",
       "producto",
       "funcionalidad",
-      "feature",
-      "app",
-      "api",
+      "funcionalidades",
+      "arquitectura",
       "integración",
       "integracion",
       "automatización",
       "automatizacion",
-      "técnico",
-      "tecnico",
     ]);
 
+    // CMO
     scores.CMO += scoreKeywords(combined, [
-      "canal",
+      "channel",
+      "channels",
       "acquisition",
+      "marketing",
+      "campaign",
+      "campaigns",
+      "distribution",
+      "audience",
+      "traffic",
+      "growth",
+      "lead generation",
+      "captación",
+      "captacion",
       "adquisición",
       "adquisicion",
       "marketing",
-      "captación",
-      "captacion",
-      "leads",
       "campaña",
-      "campana",
-      "traffic",
+      "campanas",
+      "campañas",
       "tráfico",
       "trafico",
-      "outreach",
-      "growth",
       "audiencia",
-      "distribución",
-      "distribucion",
+      "canal",
+      "canales",
+      "leads",
     ]);
 
+    // Copywriter
     scores.COPYWRITER += scoreKeywords(combined, [
-      "copy",
-      "anuncio",
-      "landing",
-      "mensaje",
-      "cta",
-      "escribe",
-      "write",
-      "hook",
-      "titular",
       "headline",
+      "cta",
+      "landing page",
+      "landing",
+      "copy",
+      "write",
+      "rewrite",
+      "hook",
+      "message",
+      "messages",
       "email",
       "dm",
-      "guion",
       "script",
+      "ad copy",
+      "headline and cta",
+      "anuncio",
+      "mensaje",
+      "mensajes",
+      "escribe",
+      "reescribe",
+      "titular",
+      "hook",
+      "landing",
+      "guion",
       "texto",
-      "post",
+      "copy",
+      "cta",
     ]);
 
+    // Scrapping
     scores.SCRAPPING += scoreKeywords(combined, [
-      "lista",
+      "prospects",
+      "prospect",
+      "lead list",
+      "list of companies",
+      "decision makers",
+      "decision maker",
+      "linkedin list",
+      "contacts",
       "prospectos",
+      "prospecto",
+      "lista",
+      "lista de empresas",
       "decisores",
       "decisor",
-      "lead list",
-      "base de datos",
       "contactos",
       "scrapping",
       "scraping",
-      "linkedin list",
-      "empresa",
-      "empresas",
     ]);
 
+    // PM
     scores.PM += scoreKeywords(combined, [
+      "project plan",
+      "deliverable",
+      "deliverables",
+      "deadline",
+      "client work",
+      "timeline",
+      "task",
+      "tasks",
+      "roadmap",
       "proyecto",
       "entregable",
+      "entregables",
       "deadline",
       "cliente",
       "cronograma",
-      "plan de ejecución",
-      "plan de ejecucion",
-      "responsable",
-      "seguimiento",
-      "task",
       "tarea",
+      "tareas",
+      "seguimiento",
     ]);
 
+    // Formación
     scores.FORMACION += scoreKeywords(combined, [
+      "explain",
+      "teach",
+      "how does it work",
+      "what does this mean",
+      "learn",
+      "training",
       "explícame",
       "explicame",
+      "enséñame",
+      "enseñame",
       "enseña",
       "enseña",
-      "aprender",
-      "formación",
-      "formacion",
       "cómo funciona",
       "como funciona",
       "qué significa",
       "que significa",
-      "enséñame",
-      "enseñame",
-      "teach me",
+      "aprender",
+      "formación",
+      "formacion",
     ]);
 
+    // CODIR
     scores.CODIR += scoreKeywords(combined, [
+      "what should i do next",
+      "what next",
+      "next step",
+      "prioritize",
+      "decide",
+      "decisión",
+      "decision",
+      "sequence",
+      "in what order",
       "qué hago",
       "que hago",
       "qué sigue",
       "que sigue",
+      "siguiente paso",
       "prioriza",
       "decide",
-      "ayúdame a pensar",
-      "ayudame a pensar",
-      "siguiente paso",
       "en qué orden",
       "en que orden",
       "go",
@@ -272,20 +342,13 @@ export default async function handler(req, res) {
       "stop",
     ]);
 
-    // Reglas por etapa para desempatar mejor
+    // Etapa como desempate
     if (stage === "VALIDACION") {
       scores.CFO += scoreKeywords(combined, [
-        "coste",
-        "costos",
-        "costo",
-        "presupuesto",
-        "peor escenario",
+        "cost", "costs", "budget", "pricing", "coste", "costos", "presupuesto", "precio"
       ]);
       scores.COPYWRITER += scoreKeywords(combined, [
-        "mensaje",
-        "anuncio",
-        "copy",
-        "landing",
+        "message", "headline", "landing", "copy", "mensaje", "titular", "landing", "copy"
       ]);
       scores.CODIR += 1;
     }
@@ -293,13 +356,9 @@ export default async function handler(req, res) {
     if (stage === "OFERTA") {
       scores.CODIR += 2;
       scores.COPYWRITER += scoreKeywords(combined, [
-        "headline",
-        "titular",
-        "promesa",
-        "mensaje",
-        "landing",
+        "headline", "cta", "promise", "headline and cta", "titular", "cta", "promesa"
       ]);
-      scores.CMO -= 1; // bajar CMO para evitar que robe demasiado pronto
+      scores.CMO -= 1;
     }
 
     if (stage === "ADS") {
@@ -309,29 +368,22 @@ export default async function handler(req, res) {
 
     if (stage === "IDEA") {
       scores.CODIR += 2;
-      scores.FORMACION += scoreKeywords(combined, [
-        "explica",
-        "explícame",
-        "cómo funciona",
-      ]);
     }
 
-    // Prioridades fuertes
+    // Prioridades
     if (scores.CFO >= 2) return "CFO";
     if (scores.CTO >= 2) return "CTO";
-    if (scores.COPYWRITER >= 2 && stage !== "IDEA") return "COPYWRITER";
+    if (scores.COPYWRITER >= 2) return "COPYWRITER";
     if (scores.CMO >= 2 && stage === "ADS") return "CMO";
     if (scores.SCRAPPING >= 2) return "SCRAPPING";
     if (scores.PM >= 2) return "PM";
     if (scores.FORMACION >= 2) return "FORMACION";
 
-    // Elegir el mayor si supera mínimo
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     const [bestMode, bestScore] = sorted[0];
 
     if (bestScore >= 2) return bestMode;
 
-    // Defaults por etapa
     if (stage === "ADS") return "CMO";
     if (stage === "OFERTA") return "CODIR";
     if (stage === "VALIDACION") return "CODIR";
@@ -365,8 +417,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         input: inputMessages,
-        temperature: 0.4,
-        max_output_tokens: 500,
+        temperature: 0.3,
+        max_output_tokens: 900,
       }),
     });
 
