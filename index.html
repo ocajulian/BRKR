@@ -7,115 +7,139 @@
   </head>
 
   <body style="margin:0; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f3f4f6; color:#111827;">
-    <div style="max-width:900px; margin:0 auto; height:100vh; display:flex; flex-direction:column;">
+    <div style="height:100vh; display:flex;">
 
-      <!-- LANGUAGE SCREEN -->
-      <div id="languageScreen" style="display:none; flex:1; align-items:center; justify-content:center; padding:24px;">
-        <div style="background:white; border:1px solid #e5e7eb; border-radius:18px; padding:32px; width:100%; max-width:520px; box-sizing:border-box;">
-          <div style="font-size:42px; font-weight:800; letter-spacing:-1px; margin-bottom:12px;">BRKR</div>
+      <!-- SIDEBAR -->
+      <aside style="width:280px; border-right:1px solid #e5e7eb; background:white; display:flex; flex-direction:column;">
+        <div style="padding:20px; border-bottom:1px solid #e5e7eb;">
+          <div style="font-size:32px; font-weight:800; letter-spacing:-1px;">BRKR</div>
+          <div style="margin-top:6px; font-size:13px; color:#6b7280;">Local multi-chat</div>
+          <button
+            onclick="createNewChat()"
+            style="margin-top:14px; width:100%; padding:12px 14px; border:none; border-radius:12px; background:#111827; color:white; font-size:14px; font-weight:600; cursor:pointer;"
+          >
+            New chat
+          </button>
+        </div>
 
-          <div style="font-size:18px; font-weight:700; margin-bottom:4px;">Select your language:</div>
-          <div style="font-size:18px; font-weight:700; margin-bottom:4px;">Selecciona tu idioma:</div>
-          <div style="font-size:18px; font-weight:700; margin-bottom:20px;">Sélectionnez votre langue :</div>
+        <div id="chatList" style="flex:1; overflow-y:auto; padding:10px;"></div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <button onclick="setLanguage('en')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">English</button>
-            <button onclick="setLanguage('es')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">Español</button>
-            <button onclick="setLanguage('fr')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">Français</button>
-            <button onclick="setLanguage('other')" style="padding:14px 16px; border:1px solid #d1d5db; border-radius:12px; background:white; color:#111827; font-size:15px; cursor:pointer;">Other</button>
+        <div style="padding:14px; border-top:1px solid #e5e7eb; background:#fafafa;">
+          <button
+            onclick="changeLanguage()"
+            style="width:100%; padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
+          >
+            Change language
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main style="flex:1; display:flex; flex-direction:column; min-width:0;">
+
+        <!-- LANGUAGE SCREEN -->
+        <div id="languageScreen" style="display:none; flex:1; align-items:center; justify-content:center; padding:24px;">
+          <div style="background:white; border:1px solid #e5e7eb; border-radius:18px; padding:32px; width:100%; max-width:520px; box-sizing:border-box;">
+            <div style="font-size:42px; font-weight:800; letter-spacing:-1px; margin-bottom:12px;">BRKR</div>
+
+            <div style="font-size:18px; font-weight:700; margin-bottom:4px;">Select your language:</div>
+            <div style="font-size:18px; font-weight:700; margin-bottom:4px;">Selecciona tu idioma:</div>
+            <div style="font-size:18px; font-weight:700; margin-bottom:20px;">Sélectionnez votre langue :</div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <button onclick="setLanguage('en')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">English</button>
+              <button onclick="setLanguage('es')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">Español</button>
+              <button onclick="setLanguage('fr')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">Français</button>
+              <button onclick="setLanguage('other')" style="padding:14px 16px; border:1px solid #d1d5db; border-radius:12px; background:white; color:#111827; font-size:15px; cursor:pointer;">Other</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- CHAT SCREEN -->
-      <div id="chatScreen" style="display:none; flex:1; flex-direction:column; min-height:0;">
-        <div style="padding:20px; border-bottom:1px solid #e5e7eb; background:white;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-            <div>
-              <div style="font-size:36px; font-weight:800; letter-spacing:-1px;">BRKR</div>
-              <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
-                Business decision engine.
+        <!-- CHAT SCREEN -->
+        <div id="chatScreen" style="display:none; flex:1; flex-direction:column; min-height:0;">
+          <div style="padding:20px; border-bottom:1px solid #e5e7eb; background:white;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+              <div>
+                <div id="chatTitle" style="font-size:28px; font-weight:800; letter-spacing:-1px;">BRKR</div>
+                <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
+                  Business decision engine.
+                </div>
               </div>
-            </div>
 
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <button
                 onclick="clearCurrentChat()"
                 style="padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
               >
                 Clear chat
               </button>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+              <div>
+                <label for="stage" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Stage</label>
+                <select id="stage" onchange="updateCurrentChatMeta()" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
+                  <option value="IDEA">IDEA</option>
+                  <option value="VALIDACION">VALIDATION</option>
+                  <option value="OFERTA">OFFER</option>
+                  <option value="ADS">ADS</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="mode" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Mode</label>
+                <select id="mode" onchange="updateCurrentChatMeta()" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
+                  <option value="AUTO">AUTO</option>
+                  <option value="CODIR">CODIR</option>
+                  <option value="CFO">CFO</option>
+                  <option value="CTO">CTO</option>
+                  <option value="CMO">CMO</option>
+                  <option value="SCRAPPING">SCRAPPING</option>
+                  <option value="COPYWRITER">COPYWRITER</option>
+                  <option value="PM">PM</option>
+                  <option value="FORMACION">TRAINING</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="messages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px;"></div>
+
+          <div style="border-top:1px solid #e5e7eb; background:white; padding:16px 20px 20px 20px;">
+            <textarea
+              id="userInput"
+              placeholder="Write here..."
+              rows="3"
+              style="width:100%; resize:none; padding:14px 16px; font-size:16px; line-height:1.5; border:1px solid #d1d5db; border-radius:14px; outline:none; box-sizing:border-box;"
+            ></textarea>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:12px;">
+              <div id="status" style="font-size:13px; color:#6b7280;">Ready.</div>
               <button
-                onclick="changeLanguage()"
-                style="padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
+                id="sendBtn"
+                onclick="sendMessage()"
+                style="padding:12px 18px; font-size:15px; font-weight:600; border:none; border-radius:12px; background:#111827; color:white; cursor:pointer;"
               >
-                Change language
+                Send
               </button>
             </div>
           </div>
-
-          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
-            <div>
-              <label for="stage" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Stage</label>
-              <select id="stage" onchange="savePreferences()" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
-                <option value="IDEA">IDEA</option>
-                <option value="VALIDACION">VALIDATION</option>
-                <option value="OFERTA">OFFER</option>
-                <option value="ADS">ADS</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="mode" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Mode</label>
-              <select id="mode" onchange="savePreferences()" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
-                <option value="AUTO">AUTO</option>
-                <option value="CODIR">CODIR</option>
-                <option value="CFO">CFO</option>
-                <option value="CTO">CTO</option>
-                <option value="CMO">CMO</option>
-                <option value="SCRAPPING">SCRAPPING</option>
-                <option value="COPYWRITER">COPYWRITER</option>
-                <option value="PM">PM</option>
-                <option value="FORMACION">TRAINING</option>
-              </select>
-            </div>
-          </div>
         </div>
-
-        <div id="messages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px;"></div>
-
-        <div style="border-top:1px solid #e5e7eb; background:white; padding:16px 20px 20px 20px;">
-          <textarea
-            id="userInput"
-            placeholder="Write here..."
-            rows="3"
-            style="width:100%; resize:none; padding:14px 16px; font-size:16px; line-height:1.5; border:1px solid #d1d5db; border-radius:14px; outline:none; box-sizing:border-box;"
-          ></textarea>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:12px;">
-            <div id="status" style="font-size:13px; color:#6b7280;">Ready.</div>
-            <button
-              id="sendBtn"
-              onclick="sendMessage()"
-              style="padding:12px 18px; font-size:15px; font-weight:600; border:none; border-radius:12px; background:#111827; color:white; cursor:pointer;"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
 
     <script>
       const STORAGE_KEYS = {
         language: "brkr_lang",
-        stage: "brkr_stage",
-        mode: "brkr_mode",
-        conversation: "brkr_current_conversation"
+        chats: "brkr_chats",
+        activeChatId: "brkr_active_chat_id"
       };
 
-      let conversation = [];
+      let chats = [];
+      let activeChatId = null;
 
+      const languageScreenEl = document.getElementById("languageScreen");
+      const chatScreenEl = document.getElementById("chatScreen");
+      const chatListEl = document.getElementById("chatList");
       const messagesEl = document.getElementById("messages");
       const inputEl = document.getElementById("userInput");
       const statusEl = document.getElementById("status");
@@ -123,6 +147,7 @@
       const topHintEl = document.getElementById("topHint");
       const stageEl = document.getElementById("stage");
       const modeEl = document.getElementById("mode");
+      const chatTitleEl = document.getElementById("chatTitle");
 
       function escapeHtml(str) {
         return String(str)
@@ -138,6 +163,137 @@
           .replace(/\*\*/g, "")
           .replace(/^###\s?(.*)$/gm, "<strong>$1</strong>")
           .replace(/\n/g, "<br>");
+      }
+
+      function autosizeTextarea() {
+        inputEl.style.height = "auto";
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 220) + "px";
+      }
+
+      function setLoading(on) {
+        const lang = localStorage.getItem(STORAGE_KEYS.language) || "en";
+        sendBtn.disabled = on;
+        sendBtn.style.opacity = on ? "0.7" : "1";
+        sendBtn.style.cursor = on ? "default" : "pointer";
+
+        if (lang === "es") {
+          statusEl.textContent = on ? "BRKR está pensando…" : "Listo.";
+        } else if (lang === "fr") {
+          statusEl.textContent = on ? "BRKR réfléchit…" : "Prêt.";
+        } else {
+          statusEl.textContent = on ? "BRKR is thinking…" : "Ready.";
+        }
+      }
+
+      function generateId() {
+        return "chat_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+      }
+
+      function getCurrentChat() {
+        return chats.find(chat => chat.id === activeChatId) || null;
+      }
+
+      function saveChats() {
+        localStorage.setItem(STORAGE_KEYS.chats, JSON.stringify(chats));
+      }
+
+      function loadChats() {
+        const raw = localStorage.getItem(STORAGE_KEYS.chats);
+        if (!raw) {
+          chats = [];
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(raw);
+          chats = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          chats = [];
+        }
+      }
+
+      function saveActiveChatId() {
+        if (activeChatId) {
+          localStorage.setItem(STORAGE_KEYS.activeChatId, activeChatId);
+        }
+      }
+
+      function loadActiveChatId() {
+        activeChatId = localStorage.getItem(STORAGE_KEYS.activeChatId);
+      }
+
+      function getLanguage() {
+        return localStorage.getItem(STORAGE_KEYS.language) || "en";
+      }
+
+      function setLanguage(lang) {
+        localStorage.setItem(STORAGE_KEYS.language, lang);
+        ensureAtLeastOneChat();
+        startApp();
+      }
+
+      function changeLanguage() {
+        localStorage.removeItem(STORAGE_KEYS.language);
+        languageScreenEl.style.display = "flex";
+        chatScreenEl.style.display = "none";
+      }
+
+      function ensureAtLeastOneChat() {
+        if (chats.length === 0) {
+          const newChat = {
+            id: generateId(),
+            title: "New chat",
+            stage: "IDEA",
+            mode: "AUTO",
+            conversation: []
+          };
+          chats.push(newChat);
+          activeChatId = newChat.id;
+          saveChats();
+          saveActiveChatId();
+        }
+      }
+
+      function deriveChatTitle(chat) {
+        const firstUserMessage = chat.conversation.find(msg => msg.role === "user");
+        if (!firstUserMessage) return "New chat";
+        return firstUserMessage.content.trim().slice(0, 36) || "New chat";
+      }
+
+      function renderChatList() {
+        chatListEl.innerHTML = "";
+
+        chats.forEach(chat => {
+          const isActive = chat.id === activeChatId;
+
+          const item = document.createElement("div");
+          item.style.padding = "12px 12px";
+          item.style.marginBottom = "8px";
+          item.style.borderRadius = "12px";
+          item.style.cursor = "pointer";
+          item.style.border = isActive ? "1px solid #111827" : "1px solid #e5e7eb";
+          item.style.background = isActive ? "#f9fafb" : "#ffffff";
+
+          item.onclick = () => switchChat(chat.id);
+
+          const title = document.createElement("div");
+          title.textContent = chat.title || "New chat";
+          title.style.fontSize = "14px";
+          title.style.fontWeight = "600";
+          title.style.whiteSpace = "nowrap";
+          title.style.overflow = "hidden";
+          title.style.textOverflow = "ellipsis";
+
+          const meta = document.createElement("div");
+          meta.textContent = `${chat.stage || "IDEA"} · ${chat.mode || "AUTO"}`;
+          meta.style.marginTop = "4px";
+          meta.style.fontSize = "12px";
+          meta.style.color = "#6b7280";
+
+          item.appendChild(title);
+          item.appendChild(meta);
+          chatListEl.appendChild(item);
+        });
       }
 
       function addBubble(role, content) {
@@ -173,90 +329,6 @@
         messagesEl.appendChild(wrapper);
       }
 
-      function renderConversation() {
-        messagesEl.innerHTML = "";
-
-        if (conversation.length === 0) {
-          addSystemWelcomeByLanguage();
-          return;
-        }
-
-        conversation.forEach((msg) => {
-          addBubble(msg.role, msg.content);
-        });
-
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-
-      function autosizeTextarea() {
-        inputEl.style.height = "auto";
-        inputEl.style.height = Math.min(inputEl.scrollHeight, 220) + "px";
-      }
-
-      function setLoading(on) {
-        const lang = localStorage.getItem(STORAGE_KEYS.language) || "en";
-        sendBtn.disabled = on;
-        sendBtn.style.opacity = on ? "0.7" : "1";
-        sendBtn.style.cursor = on ? "default" : "pointer";
-
-        if (lang === "es") {
-          statusEl.textContent = on ? "BRKR está pensando…" : "Listo.";
-        } else if (lang === "fr") {
-          statusEl.textContent = on ? "BRKR réfléchit…" : "Prêt.";
-        } else {
-          statusEl.textContent = on ? "BRKR is thinking…" : "Ready.";
-        }
-      }
-
-      function saveConversation() {
-        localStorage.setItem(STORAGE_KEYS.conversation, JSON.stringify(conversation));
-      }
-
-      function loadConversation() {
-        const raw = localStorage.getItem(STORAGE_KEYS.conversation);
-        if (!raw) {
-          conversation = [];
-          return;
-        }
-
-        try {
-          const parsed = JSON.parse(raw);
-          conversation = Array.isArray(parsed) ? parsed : [];
-        } catch {
-          conversation = [];
-        }
-      }
-
-      function savePreferences() {
-        localStorage.setItem(STORAGE_KEYS.stage, stageEl.value);
-        localStorage.setItem(STORAGE_KEYS.mode, modeEl.value);
-      }
-
-      function loadPreferences() {
-        const savedStage = localStorage.getItem(STORAGE_KEYS.stage);
-        const savedMode = localStorage.getItem(STORAGE_KEYS.mode);
-
-        if (savedStage) stageEl.value = savedStage;
-        if (savedMode) modeEl.value = savedMode;
-      }
-
-      function setLanguage(lang) {
-        localStorage.setItem(STORAGE_KEYS.language, lang);
-        startChat();
-      }
-
-      function changeLanguage() {
-        localStorage.removeItem(STORAGE_KEYS.language);
-        document.getElementById("chatScreen").style.display = "none";
-        document.getElementById("languageScreen").style.display = "flex";
-      }
-
-      function clearCurrentChat() {
-        conversation = [];
-        localStorage.removeItem(STORAGE_KEYS.conversation);
-        renderConversation();
-      }
-
       function addSystemWelcome(text) {
         const wrapper = document.createElement("div");
         wrapper.style.display = "flex";
@@ -287,28 +359,21 @@
         messagesEl.appendChild(wrapper);
       }
 
-      function addSystemWelcomeByLanguage() {
-        const lang = localStorage.getItem(STORAGE_KEYS.language);
+      function getWelcomeMessage() {
+        const lang = getLanguage();
 
         if (lang === "es") {
-          addSystemWelcome("BRKR responderá en español. Puedes dejar AUTO o elegir stage y mode manualmente.");
+          return "BRKR responderá en español. Puedes dejar AUTO o elegir stage y mode manualmente.";
         } else if (lang === "fr") {
-          addSystemWelcome("BRKR répondra en français. Vous pouvez laisser AUTO ou choisir stage et mode manuellement.");
+          return "BRKR répondra en français. Vous pouvez laisser AUTO ou choisir stage et mode manuellement.";
         } else if (lang === "other") {
-          addSystemWelcome("Write in your language. BRKR will adapt automatically. You can also choose stage and mode manually.");
-        } else {
-          addSystemWelcome("BRKR will reply in English. You can leave AUTO on or choose stage and mode manually.");
+          return "Write in your language. BRKR will adapt automatically. You can also choose stage and mode manually.";
         }
+        return "BRKR will reply in English. You can leave AUTO on or choose stage and mode manually.";
       }
 
-      function startChat() {
-        const lang = localStorage.getItem(STORAGE_KEYS.language);
-
-        document.getElementById("languageScreen").style.display = "none";
-        document.getElementById("chatScreen").style.display = "flex";
-
-        loadPreferences();
-        loadConversation();
+      function applyLanguageUI() {
+        const lang = getLanguage();
 
         if (lang === "es") {
           topHintEl.textContent = "Motor de decisión business.";
@@ -331,8 +396,69 @@
           inputEl.placeholder = "Write here...";
           sendBtn.textContent = "Send";
         }
+      }
 
-        renderConversation();
+      function renderCurrentChat() {
+        const chat = getCurrentChat();
+        if (!chat) return;
+
+        messagesEl.innerHTML = "";
+        chatTitleEl.textContent = chat.title || "New chat";
+        stageEl.value = chat.stage || "IDEA";
+        modeEl.value = chat.mode || "AUTO";
+
+        if (!chat.conversation || chat.conversation.length === 0) {
+          addSystemWelcome(getWelcomeMessage());
+        } else {
+          chat.conversation.forEach(msg => addBubble(msg.role, msg.content));
+        }
+
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function switchChat(chatId) {
+        activeChatId = chatId;
+        saveActiveChatId();
+        renderChatList();
+        renderCurrentChat();
+      }
+
+      function createNewChat() {
+        const newChat = {
+          id: generateId(),
+          title: "New chat",
+          stage: "IDEA",
+          mode: "AUTO",
+          conversation: []
+        };
+
+        chats.unshift(newChat);
+        activeChatId = newChat.id;
+        saveChats();
+        saveActiveChatId();
+        renderChatList();
+        renderCurrentChat();
+      }
+
+      function clearCurrentChat() {
+        const chat = getCurrentChat();
+        if (!chat) return;
+
+        chat.conversation = [];
+        chat.title = "New chat";
+        saveChats();
+        renderChatList();
+        renderCurrentChat();
+      }
+
+      function updateCurrentChatMeta() {
+        const chat = getCurrentChat();
+        if (!chat) return;
+
+        chat.stage = stageEl.value;
+        chat.mode = modeEl.value;
+        saveChats();
+        renderChatList();
       }
 
       inputEl.addEventListener("input", autosizeTextarea);
@@ -345,21 +471,29 @@
       });
 
       async function sendMessage() {
-        const lang = localStorage.getItem(STORAGE_KEYS.language) || "en";
-        const stage = stageEl.value;
-        const mode = modeEl.value;
+        const chat = getCurrentChat();
+        if (!chat) return;
+
+        const lang = getLanguage();
         const message = inputEl.value.trim();
 
         if (!message) return;
 
-        conversation.push({ role: "user", content: message });
-        saveConversation();
-        renderConversation();
+        chat.stage = stageEl.value;
+        chat.mode = modeEl.value;
+        chat.conversation.push({ role: "user", content: message });
+
+        if (chat.title === "New chat") {
+          chat.title = deriveChatTitle(chat);
+        }
+
+        saveChats();
+        renderChatList();
+        renderCurrentChat();
 
         inputEl.value = "";
         autosizeTextarea();
         setLoading(true);
-        savePreferences();
 
         try {
           const r = await fetch("/api/chat", {
@@ -367,10 +501,10 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message,
-              history: conversation,
+              history: chat.conversation,
               language: lang,
-              stage,
-              mode
+              stage: chat.stage,
+              mode: chat.mode
             }),
           });
 
@@ -380,35 +514,55 @@
           try {
             data = JSON.parse(raw);
           } catch {
-            conversation.push({ role: "assistant", content: raw });
-            saveConversation();
-            renderConversation();
+            chat.conversation.push({ role: "assistant", content: raw });
+            saveChats();
+            renderCurrentChat();
             setLoading(false);
             return;
           }
 
           const reply = data.reply || "No response.";
-          conversation.push({ role: "assistant", content: reply });
-          saveConversation();
-          renderConversation();
+          chat.conversation.push({ role: "assistant", content: reply });
+          saveChats();
+          renderCurrentChat();
         } catch (err) {
           const msg = `Error: ${String(err)}`;
-          conversation.push({ role: "assistant", content: msg });
-          saveConversation();
-          renderConversation();
+          chat.conversation.push({ role: "assistant", content: msg });
+          saveChats();
+          renderCurrentChat();
         } finally {
           setLoading(false);
         }
+      }
+
+      function startApp() {
+        languageScreenEl.style.display = "none";
+        chatScreenEl.style.display = "flex";
+
+        loadChats();
+        loadActiveChatId();
+        ensureAtLeastOneChat();
+
+        const exists = chats.some(chat => chat.id === activeChatId);
+        if (!exists && chats.length > 0) {
+          activeChatId = chats[0].id;
+          saveActiveChatId();
+        }
+
+        applyLanguageUI();
+        renderChatList();
+        renderCurrentChat();
+        autosizeTextarea();
       }
 
       function init() {
         const lang = localStorage.getItem(STORAGE_KEYS.language);
 
         if (!lang) {
-          document.getElementById("languageScreen").style.display = "flex";
-          document.getElementById("chatScreen").style.display = "none";
+          languageScreenEl.style.display = "flex";
+          chatScreenEl.style.display = "none";
         } else {
-          startChat();
+          startApp();
         }
 
         autosizeTextarea();
