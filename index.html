@@ -34,6 +34,33 @@
           <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
             Motor de decisión business.
           </div>
+
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+            <div>
+              <label for="stage" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Etapa / Stage</label>
+              <select id="stage" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
+                <option value="IDEA">IDEA</option>
+                <option value="VALIDACION">VALIDACIÓN</option>
+                <option value="OFERTA">OFERTA</option>
+                <option value="ADS">ADS</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="mode" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Rol / Mode</label>
+              <select id="mode" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
+                <option value="AUTO">AUTO</option>
+                <option value="CODIR">CODIR</option>
+                <option value="CFO">CFO</option>
+                <option value="CTO">CTO</option>
+                <option value="CMO">CMO</option>
+                <option value="SCRAPPING">SCRAPPING</option>
+                <option value="COPYWRITER">COPYWRITER</option>
+                <option value="PM">PM</option>
+                <option value="FORMACION">FORMACIÓN</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div id="messages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px;"></div>
@@ -125,10 +152,18 @@
       }
 
       function setLoading(on) {
+        const lang = localStorage.getItem("brkr_lang") || "es";
         sendBtn.disabled = on;
         sendBtn.style.opacity = on ? "0.7" : "1";
         sendBtn.style.cursor = on ? "default" : "pointer";
-        statusEl.textContent = on ? "BRKR is thinking…" : "Ready.";
+
+        if (lang === "en") {
+          statusEl.textContent = on ? "BRKR is thinking…" : "Ready.";
+        } else if (lang === "fr") {
+          statusEl.textContent = on ? "BRKR réfléchit…" : "Prêt.";
+        } else {
+          statusEl.textContent = on ? "BRKR está pensando…" : "Listo.";
+        }
       }
 
       function setLanguage(lang) {
@@ -147,25 +182,25 @@
           statusEl.textContent = "Listo.";
           inputEl.placeholder = "Escribe aquí...";
           sendBtn.textContent = "Enviar";
-          addSystemWelcome("BRKR responderá en español.");
+          addSystemWelcome("BRKR responderá en español. Puedes dejar AUTO o elegir etapa y rol manualmente.");
         } else if (lang === "en") {
           topHintEl.textContent = "Business decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write here...";
           sendBtn.textContent = "Send";
-          addSystemWelcome("BRKR will reply in English.");
+          addSystemWelcome("BRKR will reply in English. You can leave AUTO on or choose stage and mode manually.");
         } else if (lang === "fr") {
           topHintEl.textContent = "Moteur de décision business.";
           statusEl.textContent = "Prêt.";
           inputEl.placeholder = "Écrivez ici...";
           sendBtn.textContent = "Envoyer";
-          addSystemWelcome("BRKR répondra en français.");
+          addSystemWelcome("BRKR répondra en français. Vous pouvez laisser AUTO ou choisir l’étape et le rôle manuellement.");
         } else if (lang === "other") {
           topHintEl.textContent = "Business decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write in your language...";
           sendBtn.textContent = "Send";
-          addSystemWelcome("Write in your language. BRKR will adapt automatically.");
+          addSystemWelcome("Write in your language. BRKR will adapt automatically. You can also choose stage and mode manually.");
         }
       }
 
@@ -212,6 +247,8 @@
 
       async function sendMessage() {
         const lang = localStorage.getItem("brkr_lang") || "es";
+        const stage = document.getElementById("stage").value;
+        const mode = document.getElementById("mode").value;
         const message = inputEl.value.trim();
 
         if (!message) return;
@@ -230,7 +267,9 @@
             body: JSON.stringify({
               message,
               history: conversation,
-              language: lang
+              language: lang,
+              stage,
+              mode
             }),
           });
 
