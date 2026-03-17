@@ -754,6 +754,8 @@
         const message = inputEl.value.trim();
         if (!message) return;
 
+        setLoading(true);
+
         chat.stage = stageEl.value;
         chat.mode = modeEl.value;
         chat.conversation.push({ role: "user", content: message });
@@ -766,7 +768,6 @@
 
         inputEl.value = "";
         autosizeTextarea();
-        setLoading(true);
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 45000);
