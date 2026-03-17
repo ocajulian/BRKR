@@ -54,8 +54,8 @@ export default async function handler(req, res) {
           { role: "system", content: modePrompt },
           { role: "user", content: message },
         ],
-        temperature: 0.7,
-        max_output_tokens: 300,
+        temperature: 0.4,
+        max_output_tokens: 500,
       }),
     });
 
