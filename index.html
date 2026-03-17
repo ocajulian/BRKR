@@ -14,7 +14,7 @@
       <aside id="sidebar" style="width:280px; border-right:1px solid #e5e7eb; background:white; display:none; flex-direction:column;">
         <div style="padding:20px; border-bottom:1px solid #e5e7eb;">
           <div style="font-size:32px; font-weight:800; letter-spacing:-1px;">BRKR</div>
-          <div style="margin-top:6px; font-size:13px; color:#6b7280;">Local multi-chat</div>
+          <div style="margin-top:6px; font-size:13px; color:#6b7280;">Cloud multi-chat</div>
           <button
             onclick="createNewChat()"
             style="margin-top:14px; width:100%; padding:12px 14px; border:none; border-radius:12px; background:#111827; color:white; font-size:14px; font-weight:600; cursor:pointer;"
@@ -198,12 +198,13 @@
 
       const STORAGE_KEYS = {
         language: "brkr_lang",
-        chats: "brkr_chats",
-        activeChatId: "brkr_active_chat_id"
+        activeChatId: "brkr_active_chat_id",
+        legacyChats: "brkr_chats"
       };
 
       let chats = [];
       let activeChatId = null;
+      let currentUser = null;
 
       const sidebarEl = document.getElementById("sidebar");
       const authScreenEl = document.getElementById("authScreen");
@@ -259,10 +260,7 @@
 
         authStatusEl.textContent = "Creating account…";
 
-        const { error } = await supabaseClient.auth.signUp({
-          email,
-          password
-        });
+        const { error } = await supabaseClient.auth.signUp({ email, password });
 
         authStatusEl.textContent = error
           ? error.message
@@ -279,10 +277,7 @@
 
         authStatusEl.textContent = "Logging in…";
 
-        const { error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
         if (error) {
           authStatusEl.textContent = error.message;
@@ -295,6 +290,10 @@
 
       async function logout() {
         await supabaseClient.auth.signOut();
+        currentUser = null;
+        chats = [];
+        activeChatId = null;
+        localStorage.removeItem(STORAGE_KEYS.activeChatId);
         showAuth();
       }
 
@@ -302,10 +301,12 @@
         const { data, error } = await supabaseClient.auth.getUser();
 
         if (error || !data?.user) {
+          currentUser = null;
           userEmailEl.textContent = "—";
           return;
         }
 
+        currentUser = data.user;
         userEmailEl.textContent = data.user.email || "—";
       }
 
@@ -353,25 +354,6 @@
         return chats.find(chat => chat.id === activeChatId) || null;
       }
 
-      function saveChats() {
-        localStorage.setItem(STORAGE_KEYS.chats, JSON.stringify(chats));
-      }
-
-      function loadChats() {
-        const raw = localStorage.getItem(STORAGE_KEYS.chats);
-        if (!raw) {
-          chats = [];
-          return;
-        }
-
-        try {
-          const parsed = JSON.parse(raw);
-          chats = Array.isArray(parsed) ? parsed : [];
-        } catch {
-          chats = [];
-        }
-      }
-
       function saveActiveChatId() {
         if (activeChatId) {
           localStorage.setItem(STORAGE_KEYS.activeChatId, activeChatId);
@@ -388,7 +370,6 @@
 
       function setLanguage(lang) {
         localStorage.setItem(STORAGE_KEYS.language, lang);
-        ensureAtLeastOneChat();
         startApp();
       }
 
@@ -397,24 +378,103 @@
         showLanguage();
       }
 
-      function ensureAtLeastOneChat() {
-        if (chats.length === 0) {
-          const newChat = {
-            id: generateId(),
-            title: "New chat",
-            stage: "IDEA",
-            mode: "AUTO",
-            conversation: []
-          };
-          chats.push(newChat);
-          activeChatId = newChat.id;
-          saveChats();
-          saveActiveChatId();
+      async function fetchChatsFromSupabase() {
+        if (!currentUser) return [];
+
+        const { data, error } = await supabaseClient
+          .from("chats")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("updated_at", { ascending: false });
+
+        if (error) {
+          console.error("Fetch chats error:", error);
+          return [];
+        }
+
+        return (data || []).map((row) => ({
+          id: row.id,
+          title: row.title || "New chat",
+          stage: row.stage || "IDEA",
+          mode: row.mode || "AUTO",
+          conversation: Array.isArray(row.conversation) ? row.conversation : []
+        }));
+      }
+
+      async function saveChatToSupabase(chat) {
+        if (!currentUser || !chat) return;
+
+        const payload = {
+          id: chat.id,
+          user_id: currentUser.id,
+          title: chat.title || "New chat",
+          stage: chat.stage || "IDEA",
+          mode: chat.mode || "AUTO",
+          conversation: Array.isArray(chat.conversation) ? chat.conversation : [],
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabaseClient.from("chats").upsert(payload);
+
+        if (error) {
+          console.error("Save chat error:", error);
         }
       }
 
+      async function deleteChatFromSupabase(chatId) {
+        if (!currentUser || !chatId) return;
+
+        const { error } = await supabaseClient
+          .from("chats")
+          .delete()
+          .eq("id", chatId)
+          .eq("user_id", currentUser.id);
+
+        if (error) {
+          console.error("Delete chat error:", error);
+        }
+      }
+
+      async function migrateLegacyLocalChatsIfNeeded() {
+        if (!currentUser) return;
+
+        const migrationKey = `brkr_migrated_${currentUser.id}`;
+        if (localStorage.getItem(migrationKey) === "done") return;
+
+        const raw = localStorage.getItem(STORAGE_KEYS.legacyChats);
+        if (!raw) {
+          localStorage.setItem(migrationKey, "done");
+          return;
+        }
+
+        let legacyChats = [];
+        try {
+          const parsed = JSON.parse(raw);
+          legacyChats = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          legacyChats = [];
+        }
+
+        if (legacyChats.length === 0) {
+          localStorage.setItem(migrationKey, "done");
+          return;
+        }
+
+        for (const chat of legacyChats) {
+          await saveChatToSupabase({
+            id: chat.id || generateId(),
+            title: chat.title || "New chat",
+            stage: chat.stage || "IDEA",
+            mode: chat.mode || "AUTO",
+            conversation: Array.isArray(chat.conversation) ? chat.conversation : []
+          });
+        }
+
+        localStorage.setItem(migrationKey, "done");
+      }
+
       function deriveChatTitle(chat) {
-        const firstUserMessage = chat.conversation.find(msg => msg.role === "user");
+        const firstUserMessage = chat.conversation.find((msg) => msg.role === "user");
         if (!firstUserMessage) return "New chat";
         return firstUserMessage.content.trim().slice(0, 36) || "New chat";
       }
@@ -432,15 +492,13 @@
         if (!cleanName) return;
 
         chat.title = cleanName;
-        saveChats();
-        renderChatList();
-        renderCurrentChat();
+        persistCurrentState();
       }
 
       function renderChatList() {
         chatListEl.innerHTML = "";
 
-        chats.forEach(chat => {
+        chats.forEach((chat) => {
           const isActive = chat.id === activeChatId;
 
           const item = document.createElement("div");
@@ -450,7 +508,6 @@
           item.style.cursor = "pointer";
           item.style.border = isActive ? "1px solid #111827" : "1px solid #e5e7eb";
           item.style.background = isActive ? "#f9fafb" : "#ffffff";
-
           item.onclick = () => switchChat(chat.id);
 
           const title = document.createElement("div");
@@ -587,7 +644,7 @@
         if (!chat.conversation || chat.conversation.length === 0) {
           addSystemWelcome(getWelcomeMessage());
         } else {
-          chat.conversation.forEach(msg => addBubble(msg.role, msg.content));
+          chat.conversation.forEach((msg) => addBubble(msg.role, msg.content));
         }
 
         messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -600,7 +657,7 @@
         renderCurrentChat();
       }
 
-      function createNewChat() {
+      async function createNewChat() {
         const newChat = {
           id: generateId(),
           title: "New chat",
@@ -611,31 +668,37 @@
 
         chats.unshift(newChat);
         activeChatId = newChat.id;
-        saveChats();
         saveActiveChatId();
         renderChatList();
         renderCurrentChat();
+        await saveChatToSupabase(newChat);
       }
 
-      function clearCurrentChat() {
+      async function clearCurrentChat() {
         const chat = getCurrentChat();
         if (!chat) return;
 
         chat.conversation = [];
         chat.title = "New chat";
-        saveChats();
-        renderChatList();
-        renderCurrentChat();
+        await persistCurrentState();
       }
 
-      function updateCurrentChatMeta() {
+      async function updateCurrentChatMeta() {
         const chat = getCurrentChat();
         if (!chat) return;
 
         chat.stage = stageEl.value;
         chat.mode = modeEl.value;
-        saveChats();
+        await persistCurrentState();
+      }
+
+      async function persistCurrentState() {
+        const chat = getCurrentChat();
+        if (!chat) return;
+
         renderChatList();
+        renderCurrentChat();
+        await saveChatToSupabase(chat);
       }
 
       inputEl.addEventListener("input", autosizeTextarea);
@@ -664,9 +727,7 @@
           chat.title = deriveChatTitle(chat);
         }
 
-        saveChats();
-        renderChatList();
-        renderCurrentChat();
+        await persistCurrentState();
 
         inputEl.value = "";
         autosizeTextarea();
@@ -692,35 +753,37 @@
             data = JSON.parse(raw);
           } catch {
             chat.conversation.push({ role: "assistant", content: raw });
-            saveChats();
-            renderCurrentChat();
+            await persistCurrentState();
             setLoading(false);
             return;
           }
 
           const reply = data.reply || "No response.";
           chat.conversation.push({ role: "assistant", content: reply });
-          saveChats();
-          renderCurrentChat();
+          await persistCurrentState();
         } catch (err) {
           const msg = `Error: ${String(err)}`;
           chat.conversation.push({ role: "assistant", content: msg });
-          saveChats();
-          renderCurrentChat();
+          await persistCurrentState();
         } finally {
           setLoading(false);
         }
       }
 
-      function startApp() {
-        loadCurrentUser();
+      async function startApp() {
+        await loadCurrentUser();
         showApp();
 
-        loadChats();
         loadActiveChatId();
-        ensureAtLeastOneChat();
+        await migrateLegacyLocalChatsIfNeeded();
+        chats = await fetchChatsFromSupabase();
 
-        const exists = chats.some(chat => chat.id === activeChatId);
+        if (chats.length === 0) {
+          await createNewChat();
+          chats = await fetchChatsFromSupabase();
+        }
+
+        const exists = chats.some((chat) => chat.id === activeChatId);
         if (!exists && chats.length > 0) {
           activeChatId = chats[0].id;
           saveActiveChatId();
@@ -738,7 +801,7 @@
         if (!lang) {
           showLanguage();
         } else {
-          startApp();
+          await startApp();
         }
       }
 
