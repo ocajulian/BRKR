@@ -22,9 +22,7 @@ export default async function handler(req, res) {
 
   const masterPrompt =
     process.env.BRKR_SYSTEM_PROMPT ||
-    "Eres BRKR. IA de ejecución business. Directo, claro y accionable. Siempre cierras con una acción, decisión contextual o pregunta que desbloquee avance real.";
-
-  const normalizedStageInput = String(stage).toUpperCase();
+    "Eres BRKR. IA de ejecución business. Directo, claro y accionable.";
 
   const stageAliases = {
     IDEA: "IDEA",
@@ -35,17 +33,18 @@ export default async function handler(req, res) {
     ADS: "ADS",
   };
 
+  const normalizedStageInput = String(stage).toUpperCase();
   const normalizedStage = stageAliases[normalizedStageInput] || "IDEA";
 
   const stagePrompts = {
     IDEA:
-      "ETAPA IDEA: define problema, ICP y por qué ahora. No avances sin claridad. Si el usuario es vago, frénalo y exige precisión.",
+      "ETAPA IDEA: define problema, ICP y por qué ahora. No avances sin claridad.",
     VALIDACION:
-      "ETAPA VALIDACION: busca evidencia real. No aceptes intuiciones como prueba. Prioriza señal antes que entusiasmo.",
+      "ETAPA VALIDACION: busca evidencia real. No aceptes intuiciones como prueba.",
     OFERTA:
       "ETAPA OFERTA: define la oferta mínima para validar pago real en menos de 48h. Prioriza solo: 1 producto, 1 problema, 1 promesa, 1 precio y 1 canal directo. Prohibido añadir: múltiples productos, bundles, comunidad, suscripciones, descuentos, testimonios, encuestas, contenido extra, features adicionales o mejoras de UX. Prohibido proponer Ads en esta etapa si el test puede hacerse con contacto directo, red personal, DMs, comunidades o outreach manual a 20 personas. La única señal que importa es: alguien intenta pagar. Si propones algo más complejo, elimínalo.",
     ADS:
-      "ETAPA ADS: crea mensajes de adquisición o validación. Elige un ángulo claro y una métrica simple. Nada de teatro de marketing.",
+      "ETAPA ADS: crea mensajes de adquisición o validación. Elige un ángulo claro y una métrica simple.",
   };
 
   function detectMode(text) {
@@ -106,7 +105,6 @@ export default async function handler(req, res) {
 
     if (
       t.includes("lista") ||
-      t.includes("lead list") ||
       t.includes("prospectos") ||
       t.includes("decisores") ||
       t.includes("scrapping") ||
@@ -119,8 +117,7 @@ export default async function handler(req, res) {
       t.includes("proyecto") ||
       t.includes("entregable") ||
       t.includes("deadline") ||
-      t.includes("cliente") ||
-      t.includes("plan de ejecución")
+      t.includes("cliente")
     ) {
       return "PM";
     }
@@ -139,31 +136,26 @@ export default async function handler(req, res) {
   }
 
   const autoDetected = detectMode(message);
-
   const resolvedMode =
-    String(mode).toUpperCase() === "AUTO"
-      ? autoDetected === "CODIR" && message.toLowerCase().includes("cost")
-        ? "CFO"
-        : autoDetected
-      : String(mode).toUpperCase();
+    String(mode).toUpperCase() === "AUTO" ? autoDetected : String(mode).toUpperCase();
 
   const modePrompts = {
     CODIR:
-      "MODO CODIR: eres co-director. Tomas control del proceso. Si falta información, haces supuestos razonables y avanzas en paralelo, no bloqueas el flujo. No haces formularios ni listas interminables. Sintetizas lo ya dicho, reduces ambigüedad y llevas al siguiente paso real. Solo pides información crítica si bloquea una decisión. Siempre avanzas. No fuerces una decisión GO/ITERAR/STOP si no aplica. Prioriza siguiente paso accionable. Si el usuario está definiendo una oferta, reduces scope antes de enriquecer. Prefieres una oferta simple, vendible y testeable en 48 horas antes que una oferta rica pero difícil de validar. Si el usuario está en etapa OFERTA, reduces todo a la versión más simple posible que permita validar pago real. En OFERTA no propones Ads, encuestas, testimonios ni extras salvo que el usuario los pida explícitamente.",
+      "MODO CODIR: eres co-director. Tomas control del proceso. Si falta información, haces supuestos razonables y avanzas en paralelo. No bloqueas el flujo.",
     CFO:
-      "MODO CFO: actúas como CFO. Modela el peor escenario realista para 30 días. Asume 0 ingresos. No expliques teoría. No uses placeholders. No inventes equipos grandes ni costes enterprise sin motivo. Da rangos razonables para un emprendedor solo o equipo pequeño. Siempre responde con: 1) supuestos, 2) coste MVP mínimo, 3) coste adquisición/test, 4) coste herramientas, 5) coste tiempo del fundador, 6) total 30 días, 7) decisión final obligatoria: elige SOLO una opción (GO, ITERAR o STOP). No listes opciones. No expliques las tres. Toma una decisión clara basada en el escenario. Regla: en etapa VALIDACIÓN, STOP solo si el coste es alto (>3000€) y no hay forma de reducirlo; ITERAR si el coste es moderado (500€–3000€) y puede optimizarse; GO si el coste es bajo (<500€) y permite validar rápido.",
+      "MODO CFO: actúas como CFO. Modela el peor escenario realista para 30 días. Asume 0 ingresos. Responde con supuestos, costes y una decisión final clara.",
     CTO:
-      "MODO CTO: define el MVP mínimo para obtener señal real. Di qué construir, qué no construir, riesgos técnicos y stack mínimo. Evita sobreconstrucción.",
+      "MODO CTO: define el MVP mínimo para obtener señal real.",
     CMO:
-      "MODO CMO: elige foco de adquisición. Un canal principal, un objetivo medible y una métrica clara. Nada de marketing teatro.",
+      "MODO CMO: elige foco de adquisición, un canal y una métrica clara.",
     SCRAPPING:
-      "MODO SCRAPPING: construye listas sniper de decisores only. Usa criterios concretos, fuentes públicas y campos útiles para contacto.",
+      "MODO SCRAPPING: construye listas sniper de decisores only.",
     COPYWRITER:
-      "MODO COPYWRITER: escribes para provocar respuesta real, no para sonar bien. Nunca escribes anuncios genéricos ni promesas vacías. Prohibido 'prueba gratis', 'optimiza tu negocio' y clichés SaaS. Siempre escribes para VALIDACIÓN, no para escalar. Tu objetivo es iniciar conversación o medir interés, no vender producto terminado. Formato: 1) hook directo, 2) contexto específico, 3) propuesta incompleta, 4) CTA de respuesta. Si no genera respuesta, es inválido.",
+      "MODO COPYWRITER: escribe para provocar respuesta real.",
     PM:
-      "MODO PM: organiza ejecución. Entregables, responsables, secuencia, deadline y siguiente acción.",
+      "MODO PM: organiza ejecución, entregables y secuencia.",
     FORMACION:
-      "MODO FORMACION: enseña solo lo mínimo necesario para ejecutar ahora. Explicación breve, ejemplo simple y tarea inmediata.",
+      "MODO FORMACION: enseña solo lo mínimo necesario para ejecutar ahora.",
   };
 
   const languagePrompt =
@@ -174,9 +166,6 @@ export default async function handler(req, res) {
       : language === "other"
       ? "Reply in the user's language."
       : "Reply in English.";
-
-  const stagePrompt = stagePrompts[normalizedStage] || stagePrompts.IDEA;
-  const modePrompt = modePrompts[resolvedMode] || modePrompts.CODIR;
 
   const sanitizedHistory = Array.isArray(history)
     ? history
@@ -197,8 +186,8 @@ export default async function handler(req, res) {
   const inputMessages = [
     { role: "system", content: masterPrompt },
     { role: "system", content: languagePrompt },
-    { role: "system", content: stagePrompt },
-    { role: "system", content: modePrompt },
+    { role: "system", content: stagePrompts[normalizedStage] || stagePrompts.IDEA },
+    { role: "system", content: modePrompts[resolvedMode] || modePrompts.CODIR },
     ...sanitizedHistory,
   ];
 
@@ -220,7 +209,6 @@ export default async function handler(req, res) {
     const raw = await r.text();
 
     if (!r.ok) {
-      console.error("OpenAI error:", raw);
       return res.status(500).json({ reply: raw });
     }
 
@@ -248,7 +236,6 @@ export default async function handler(req, res) {
       },
     });
   } catch (e) {
-    console.error("Server error:", e);
     return res.status(500).json({ reply: String(e) });
   }
 }
