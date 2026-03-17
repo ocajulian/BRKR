@@ -3,8 +3,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ reply: "Use POST" });
   }
 
-  const { message } = req.body || {};
-  if (!message) {
+  const { message, stage = "IDEA", mode = "CODIR" } = req.body || {};
+
+  if (!message || typeof message !== "string") {
     return res.status(400).json({ reply: "Missing message" });
   }
 
@@ -13,9 +14,51 @@ export default async function handler(req, res) {
     return res.status(500).json({ reply: "Missing OPENAI_API_KEY" });
   }
 
+  const masterPrompt =
+    process.env.BRKR_SYSTEM_PROMPT ||
+    "Eres BRKR (fallback). Responde en español, claro y accionable.";
+
+  const stagePrompts = {
+    IDEA: `ETAPA: IDEA
+Objetivo: claridad (problema, ICP, por qué ahora). No avanzas sin precisión. Avance siempre explícito.`,
+    VALIDACION: `ETAPA: VALIDACIÓN
+Objetivo: evidencia real. No avanzas con intuición. Avance siempre explícito.`,
+    OFERTA: `ETAPA: OFERTA
+Objetivo: propuesta concreta (qué, para quién, precio/rango, garantía). Avance siempre explícito.`,
+    ADS: `ETAPA: ADS
+Objetivo: adquisición. Elige 1 canal y define métrica. Avance siempre explícito.`,
+  };
+
+  const modePrompts = {
+    CODIR: `MODO: CODIR
+Prioriza foco, simplifica y fuerza siguiente paso real. Bloquea requests irrelevantes.`,
+    CFO: `MODO: CFO
+Proyección de costos y riesgo en peor escenario. Runway, punto de quiebre, costos ocultos. Sin maquillaje.`,
+    CTO: `MODO: CTO
+Define MVP real (hipótesis + señal). Qué construir y qué NO. Riesgos técnicos y plan mínimo.`,
+    CMO: `MODO: CMO
+Estrategia de adquisición. 1 canal, 1 objetivo medible, criterio de éxito. Anti-teatro.`,
+    SCRAPPING: `MODO: SCRAPPING
+Lista SNIPER (10–30). Decisores only. Fuentes públicas. Datos en tabla + ángulos de contacto.`,
+    COPYWRITER: `MODO: COPYWRITER
+Escribe para respuesta/acción. Sin hype. CTA claro. Si no abre conversación, se reescribe.`,
+    PM: `MODO: PROJECT MANAGER
+Entregables, responsabilidades, checklist, deadlines. Feedback → acciones.`,
+    FORMACION: `MODO: FORMACIÓN
+Enseña lo mínimo para ejecutar: explicación breve + ejemplo + tarea inmediata.`,
+  };
+
+  const stageKey = String(stage).toUpperCase();
+  const modeKey = String(mode).toUpperCase();
+
+  const stagePrompt = stagePrompts[stageKey] || stagePrompts.IDEA;
+  const modePrompt = modePrompts[modeKey] || modePrompts.CODIR;
+
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   try {
+    console.log("BRKR request:", { stage: stageKey, mode: modeKey });
+
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -25,43 +68,39 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model,
         input: [
-          {
-            role: "system",
-            content:
-              "Eres BRKR: motor de decisiones para micro-SaaS y makers. Responde en español, claro, accionable y breve.",
-          },
+          { role: "system", content: masterPrompt },
+          { role: "system", content: stagePrompt },
+          { role: "system", content: modePrompt },
           { role: "user", content: message },
         ],
         temperature: 0.7,
-        max_output_tokens: 300,
+        max_output_tokens: 350,
       }),
     });
 
     const raw = await r.text();
 
     if (!r.ok) {
+      console.error("OpenAI error:", raw);
       return res.status(500).json({ reply: raw });
     }
 
-  const data = JSON.parse(raw);
+    const data = JSON.parse(raw);
 
-// Extraer texto de forma más robusta
-const text =
-  data.output_text ||
-  data?.output?.[0]?.content?.map((c) => c.text).filter(Boolean).join("\n") ||
-  data?.output?.[0]?.content?.[0]?.text ||
-  "";
+    const text =
+      data.output_text ||
+      (Array.isArray(data.output)
+        ? data.output
+            .flatMap((o) => o.content || [])
+            .map((c) => c.text)
+            .filter(Boolean)
+            .join("\n")
+        : "") ||
+      "No pude generar respuesta.";
 
-// Si sigue vacío, devolvemos un resumen del raw para depurar (sin romper el frontend)
-if (!text.trim()) {
-  return res.status(200).json({
-    reply: "No llegó texto del modelo. Pega esto aquí para revisar:\n" + raw.slice(0, 1500),
-  });
-}
-
-return res.status(200).json({ reply: text });
-
+    return res.status(200).json({ reply: text });
   } catch (e) {
+    console.error("Server error:", e);
     return res.status(500).json({ reply: String(e) });
   }
 }
