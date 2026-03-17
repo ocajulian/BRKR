@@ -9,6 +9,26 @@
   <body style="font-family: system-ui; padding: 40px; max-width: 600px;">
     <h1>BRKR</h1>
 
+    <div style="display:flex; gap:10px; margin: 10px 0;">
+      <select id="stage">
+        <option value="IDEA">Idea</option>
+        <option value="VALIDACION">Validación</option>
+        <option value="OFERTA">Oferta</option>
+        <option value="ADS">Ads</option>
+      </select>
+
+      <select id="mode">
+        <option value="CODIR">CODIR</option>
+        <option value="CFO">CFO</option>
+        <option value="CTO">CTO</option>
+        <option value="CMO">CMO</option>
+        <option value="SCRAPPING">Scrapping</option>
+        <option value="COPYWRITER">Copywriter</option>
+        <option value="PM">Project Manager</option>
+        <option value="FORMACION">Formación</option>
+      </select>
+    </div>
+
     <input
       id="userInput"
       type="text"
@@ -29,6 +49,8 @@
       async function sendMessage() {
         const inputEl = document.getElementById("userInput");
         const responseDiv = document.getElementById("response");
+        const stage = document.getElementById("stage").value;
+        const mode = document.getElementById("mode").value;
         const message = inputEl.value;
 
         if (!message) {
@@ -42,7 +64,7 @@
           const r = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify({ message, stage, mode }),
           });
 
           const raw = await r.text();
