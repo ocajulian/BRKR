@@ -6,7 +6,7 @@
     <title>BRKR</title>
   </head>
 
-  <body style="font-family: system-ui; padding: 40px; max-width: 600px;">
+  <body style="font-family: system-ui; padding: 40px; max-width: 700px; margin:auto; background:#f7f7f7;">
     <h1>BRKR</h1>
 
     <div style="display:flex; gap:10px; margin: 10px 0;">
@@ -43,7 +43,7 @@
       Enviar
     </button>
 
-    <div id="response" style="margin-top: 20px;"></div>
+    <div id="response" style="margin-top:20px; background:white; padding:15px; border-radius:10px;"></div>
 
     <script>
       async function sendMessage() {
@@ -54,11 +54,25 @@
         const message = inputEl.value;
 
         if (!message) {
-          responseDiv.innerHTML = "<em>Escribe algo.</em>";
           return;
         }
 
-        responseDiv.innerHTML = "<em>Pensando…</em>";
+        // Mostrar mensaje del usuario
+        responseDiv.innerHTML += `
+          <div style="margin-top:10px;">
+            <strong>Tú:</strong><br>
+            ${message}
+          </div>
+        `;
+
+        inputEl.value = "";
+
+        // Indicador de carga
+        responseDiv.innerHTML += `
+          <div id="loading" style="margin-top:10px;">
+            <em>Pensando…</em>
+          </div>
+        `;
 
         try {
           const r = await fetch("/api/chat", {
@@ -73,13 +87,28 @@
           try {
             data = JSON.parse(raw);
           } catch {
-            responseDiv.innerHTML = `<pre>${raw}</pre>`;
+            document.getElementById("loading").remove();
+            responseDiv.innerHTML += `<pre>${raw}</pre>`;
             return;
           }
 
-          responseDiv.innerHTML = `<strong>BRKR:</strong> ${data.reply}`;
+          document.getElementById("loading").remove();
+
+          responseDiv.innerHTML += `
+            <div style="margin-top:10px;">
+              <strong>BRKR:</strong><br>
+              ${data.reply
+                .replace(/\n/g, "<br>")
+                .replace(/\*\*/g, "")}
+            </div>
+          `;
+
+          // Auto scroll
+          responseDiv.scrollTop = responseDiv.scrollHeight;
+
         } catch (err) {
-          responseDiv.innerHTML = `<strong>Error:</strong> ${String(err)}`;
+          document.getElementById("loading").remove();
+          responseDiv.innerHTML += `<div><strong>Error:</strong> ${String(err)}</div>`;
         }
       }
     </script>
