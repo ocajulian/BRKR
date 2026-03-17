@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,24 +30,35 @@
       <!-- CHAT SCREEN -->
       <div id="chatScreen" style="display:none; flex:1; flex-direction:column; min-height:0;">
         <div style="padding:20px; border-bottom:1px solid #e5e7eb; background:white;">
-          <div style="font-size:36px; font-weight:800; letter-spacing:-1px;">BRKR</div>
-          <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
-            Motor de decisión business.
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+            <div>
+              <div style="font-size:36px; font-weight:800; letter-spacing:-1px;">BRKR</div>
+              <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
+                Business decision engine.
+              </div>
+            </div>
+
+            <button
+              onclick="changeLanguage()"
+              style="padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
+            >
+              Change language
+            </button>
           </div>
 
           <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
             <div>
-              <label for="stage" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Etapa / Stage</label>
+              <label for="stage" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Stage</label>
               <select id="stage" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
                 <option value="IDEA">IDEA</option>
-                <option value="VALIDACION">VALIDACIÓN</option>
-                <option value="OFERTA">OFERTA</option>
+                <option value="VALIDACION">VALIDATION</option>
+                <option value="OFERTA">OFFER</option>
                 <option value="ADS">ADS</option>
               </select>
             </div>
 
             <div>
-              <label for="mode" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Rol / Mode</label>
+              <label for="mode" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Mode</label>
               <select id="mode" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
                 <option value="AUTO">AUTO</option>
                 <option value="CODIR">CODIR</option>
@@ -57,7 +68,7 @@
                 <option value="SCRAPPING">SCRAPPING</option>
                 <option value="COPYWRITER">COPYWRITER</option>
                 <option value="PM">PM</option>
-                <option value="FORMACION">FORMACIÓN</option>
+                <option value="FORMACION">TRAINING</option>
               </select>
             </div>
           </div>
@@ -68,19 +79,19 @@
         <div style="border-top:1px solid #e5e7eb; background:white; padding:16px 20px 20px 20px;">
           <textarea
             id="userInput"
-            placeholder="Escribe aquí..."
+            placeholder="Write here..."
             rows="3"
             style="width:100%; resize:none; padding:14px 16px; font-size:16px; line-height:1.5; border:1px solid #d1d5db; border-radius:14px; outline:none; box-sizing:border-box;"
           ></textarea>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:12px;">
-            <div id="status" style="font-size:13px; color:#6b7280;">Listo.</div>
+            <div id="status" style="font-size:13px; color:#6b7280;">Ready.</div>
             <button
               id="sendBtn"
               onclick="sendMessage()"
               style="padding:12px 18px; font-size:15px; font-weight:600; border:none; border-radius:12px; background:#111827; color:white; cursor:pointer;"
             >
-              Enviar
+              Send
             </button>
           </div>
         </div>
@@ -152,23 +163,31 @@
       }
 
       function setLoading(on) {
-        const lang = localStorage.getItem("brkr_lang") || "es";
+        const lang = localStorage.getItem("brkr_lang") || "en";
         sendBtn.disabled = on;
         sendBtn.style.opacity = on ? "0.7" : "1";
         sendBtn.style.cursor = on ? "default" : "pointer";
 
-        if (lang === "en") {
-          statusEl.textContent = on ? "BRKR is thinking…" : "Ready.";
+        if (lang === "es") {
+          statusEl.textContent = on ? "BRKR está pensando…" : "Listo.";
         } else if (lang === "fr") {
           statusEl.textContent = on ? "BRKR réfléchit…" : "Prêt.";
         } else {
-          statusEl.textContent = on ? "BRKR está pensando…" : "Listo.";
+          statusEl.textContent = on ? "BRKR is thinking…" : "Ready.";
         }
       }
 
       function setLanguage(lang) {
         localStorage.setItem("brkr_lang", lang);
         startChat();
+      }
+
+      function changeLanguage() {
+        localStorage.removeItem("brkr_lang");
+        conversation = [];
+        messagesEl.innerHTML = "";
+        document.getElementById("chatScreen").style.display = "none";
+        document.getElementById("languageScreen").style.display = "flex";
       }
 
       function startChat() {
@@ -182,25 +201,25 @@
           statusEl.textContent = "Listo.";
           inputEl.placeholder = "Escribe aquí...";
           sendBtn.textContent = "Enviar";
-          addSystemWelcome("BRKR responderá en español. Puedes dejar AUTO o elegir etapa y rol manualmente.");
-        } else if (lang === "en") {
-          topHintEl.textContent = "Business decision engine.";
-          statusEl.textContent = "Ready.";
-          inputEl.placeholder = "Write here...";
-          sendBtn.textContent = "Send";
-          addSystemWelcome("BRKR will reply in English. You can leave AUTO on or choose stage and mode manually.");
+          addSystemWelcome("BRKR responderá en español. Puedes dejar AUTO o elegir stage y mode manualmente.");
         } else if (lang === "fr") {
           topHintEl.textContent = "Moteur de décision business.";
           statusEl.textContent = "Prêt.";
           inputEl.placeholder = "Écrivez ici...";
           sendBtn.textContent = "Envoyer";
-          addSystemWelcome("BRKR répondra en français. Vous pouvez laisser AUTO ou choisir l’étape et le rôle manuellement.");
+          addSystemWelcome("BRKR répondra en français. Vous pouvez laisser AUTO ou choisir stage et mode manuellement.");
         } else if (lang === "other") {
           topHintEl.textContent = "Business decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write in your language...";
           sendBtn.textContent = "Send";
           addSystemWelcome("Write in your language. BRKR will adapt automatically. You can also choose stage and mode manually.");
+        } else {
+          topHintEl.textContent = "Business decision engine.";
+          statusEl.textContent = "Ready.";
+          inputEl.placeholder = "Write here...";
+          sendBtn.textContent = "Send";
+          addSystemWelcome("BRKR will reply in English. You can leave AUTO on or choose stage and mode manually.");
         }
       }
 
@@ -246,7 +265,7 @@
       });
 
       async function sendMessage() {
-        const lang = localStorage.getItem("brkr_lang") || "es";
+        const lang = localStorage.getItem("brkr_lang") || "en";
         const stage = document.getElementById("stage").value;
         const mode = document.getElementById("mode").value;
         const message = inputEl.value.trim();
@@ -285,7 +304,7 @@
             return;
           }
 
-          const reply = data.reply || "No pude generar respuesta.";
+          const reply = data.reply || "No response.";
           addBubble("assistant", reply);
           conversation.push({ role: "assistant", content: reply });
         } catch (err) {
