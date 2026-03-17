@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     CTO: "MODO CTO: define MVP mínimo y qué NO construir.",
     CMO: "MODO CMO: elige canal y objetivo medible.",
     SCRAPPING: "MODO SCRAPPING: lista decisores y fuentes públicas.",
-    COPYWRITER: "MODO COPYWRITER: escribe para acción con CTA claro.",
+    COPYWRITER: "MODO COPYWRITER: escribes para provocar respuesta real, no para sonar bien. Nunca escribes anuncios genéricos ni promesas vacías. Prohibido 'prueba gratis', 'optimiza tu negocio', o clichés SaaS. Siempre escribes para VALIDACIÓN, no para escalar. Tu objetivo es iniciar conversación o medir interés, no vender producto terminado. Formato: 1) hook directo (dolor real), 2) contexto específico, 3) propuesta incompleta (invita a opinar), 4) CTA de respuesta (no compra). Si no genera respuesta, es inválido.",
     PM: "MODO PM: define entregables y siguientes acciones.",
     FORMACION: "MODO FORMACION: explica mínimo y manda tarea.",
   };
