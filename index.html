@@ -5,143 +5,436 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>BRKR</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      :root {
+        --bg: #f5f6f8;
+        --panel: #ffffff;
+        --panel-soft: #fafafa;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #6b7280;
+        --accent: #111827;
+        --accent-text: #ffffff;
+        --bubble-user: #111827;
+        --bubble-user-text: #ffffff;
+        --bubble-assistant: #ffffff;
+        --bubble-assistant-text: #111827;
+        --input-bg: #f9fafb;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      body.theme-dark {
+        --bg: #111315;
+        --panel: #17191c;
+        --panel-soft: #141619;
+        --border: #262a30;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: #f3f4f6;
+        --accent-text: #111315;
+        --bubble-user: #f3f4f6;
+        --bubble-user-text: #111315;
+        --bubble-assistant: #1b1f24;
+        --bubble-assistant-text: #f3f4f6;
+        --input-bg: #111315;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      .app-shell {
+        height: 100vh;
+        display: flex;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .sidebar {
+        width: 280px;
+        border-right: 1px solid var(--border);
+        background: var(--panel);
+        display: none;
+        flex-direction: column;
+      }
+
+      .sidebar-header,
+      .sidebar-footer,
+      .topbar {
+        background: var(--panel);
+      }
+
+      .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand-title {
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+
+      .brand-subtitle,
+      .muted {
+        color: var(--muted);
+      }
+
+      .sidebar-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      .chat-item {
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 14px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        transition: 0.15s ease;
+      }
+
+      .chat-item.active {
+        border-color: var(--accent);
+        background: var(--panel-soft);
+      }
+
+      .chat-item:hover {
+        transform: translateY(-1px);
+      }
+
+      .sidebar-footer {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      .user-box {
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel-soft);
+      }
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .screen {
+        display: none;
+        flex: 1;
+      }
+
+      .center-screen {
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: var(--shadow);
+      }
+
+      .auth-card {
+        max-width: 460px;
+      }
+
+      .topbar {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .topbar-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .chat-title {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .controls-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .select,
+      .text-input,
+      .text-area,
+      .btn {
+        border-radius: 14px;
+        border: 1px solid var(--border);
+      }
+
+      .select,
+      .text-input {
+        padding: 10px 12px;
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .text-area {
+        width: 100%;
+        resize: none;
+        padding: 16px 18px;
+        font-size: 16px;
+        line-height: 1.6;
+        background: var(--input-bg);
+        color: var(--text);
+        outline: none;
+      }
+
+      .btn {
+        padding: 10px 12px;
+        background: var(--panel);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        border: none;
+        background: var(--accent);
+        color: var(--accent-text);
+        font-weight: 600;
+      }
+
+      .btn-full {
+        width: 100%;
+      }
+
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 24px 120px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .bubble-row {
+        display: flex;
+      }
+
+      .bubble-row.user {
+        justify-content: flex-end;
+      }
+
+      .bubble-row.assistant {
+        justify-content: flex-start;
+      }
+
+      .bubble {
+        max-width: 720px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        line-height: 1.55;
+      }
+
+      .bubble.user {
+        background: var(--bubble-user);
+        color: var(--bubble-user-text);
+      }
+
+      .bubble.assistant {
+        background: var(--bubble-assistant);
+        color: var(--bubble-assistant-text);
+        border: 1px solid var(--border);
+      }
+
+      .bubble-label {
+        font-size: 12px;
+        margin-bottom: 6px;
+        opacity: 0.65;
+        font-weight: 500;
+      }
+
+      .composer {
+        border-top: 1px solid var(--border);
+        background: var(--panel);
+        padding: 16px 20px 20px 20px;
+      }
+
+      .composer-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        gap: 12px;
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .theme-switch {
+        display: flex;
+        gap: 8px;
+      }
+
+      .lang-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .small {
+        font-size: 13px;
+      }
+    </style>
   </head>
 
-  <body style="margin:0; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f3f4f6; color:#111827;">
-    <div style="height:100vh; display:flex;">
-
+  <body class="theme-light">
+    <div class="app-shell">
       <!-- SIDEBAR -->
-      <aside id="sidebar" style="width:280px; border-right:1px solid #e5e7eb; background:white; display:none; flex-direction:column;">
-        <div style="padding:20px; border-bottom:1px solid #e5e7eb;">
-          <div style="font-size:32px; font-weight:800; letter-spacing:-1px;">BRKR</div>
-          <div style="margin-top:6px; font-size:13px; color:#6b7280;">Cloud multi-chat</div>
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand-title">BRKR</div>
+          <div class="brand-subtitle small" style="margin-top:6px;">
+            Cloud multi-chat
+          </div>
           <button
             onclick="createNewChat()"
-            style="margin-top:14px; width:100%; padding:12px 14px; border:none; border-radius:12px; background:#111827; color:white; font-size:14px; font-weight:600; cursor:pointer;"
+            class="btn btn-primary btn-full"
+            style="margin-top:14px; padding:12px 14px;"
           >
             New chat
           </button>
         </div>
 
-        <div id="chatList" style="flex:1; overflow-y:auto; padding:10px;"></div>
+        <div id="chatList" class="sidebar-list"></div>
 
-        <div style="padding:14px; border-top:1px solid #e5e7eb; background:#fafafa;">
-          <div style="margin-bottom:10px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; background:white;">
-            <div style="font-size:11px; color:#6b7280; margin-bottom:4px;">Logged in as</div>
-            <div id="userEmail" style="font-size:13px; font-weight:600; word-break:break-word;">—</div>
+        <div class="sidebar-footer">
+          <div class="user-box">
+            <div class="small muted" style="font-size:11px; margin-bottom:4px;">
+              Logged in as
+            </div>
+            <div id="userEmail" class="small" style="font-weight:600; word-break:break-word;">—</div>
+          </div>
+
+          <div class="theme-switch" style="margin-bottom:10px;">
+            <button class="btn btn-full" onclick="setTheme('light')">Clair</button>
+            <button class="btn btn-full" onclick="setTheme('dark')">Sombre</button>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:8px;">
-            <button
-              onclick="changeLanguage()"
-              style="width:100%; padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
-            >
-              Change language
-            </button>
-            <button
-              onclick="logout()"
-              style="width:100%; padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
-            >
-              Log out
-            </button>
+            <button class="btn btn-full" onclick="changeLanguage()">Change language</button>
+            <button class="btn btn-full" onclick="logout()">Log out</button>
           </div>
         </div>
       </aside>
 
       <!-- MAIN -->
-      <main style="flex:1; display:flex; flex-direction:column; min-width:0;">
-
-        <!-- AUTH SCREEN -->
-        <div id="authScreen" style="display:none; flex:1; align-items:center; justify-content:center; padding:24px;">
-          <div style="background:white; border:1px solid #e5e7eb; border-radius:18px; padding:32px; width:100%; max-width:460px; box-sizing:border-box;">
-            <div style="font-size:42px; font-weight:800; letter-spacing:-1px; margin-bottom:12px;">BRKR</div>
-            <div style="font-size:15px; color:#6b7280; margin-bottom:20px;">Create an account or log in to access your workspace.</div>
-
-            <input
-              id="authEmail"
-              type="email"
-              placeholder="Email"
-              style="width:100%; padding:12px 14px; margin-bottom:10px; border:1px solid #d1d5db; border-radius:12px; box-sizing:border-box; font-size:15px;"
-            />
-
-            <input
-              id="authPassword"
-              type="password"
-              placeholder="Password"
-              style="width:100%; padding:12px 14px; margin-bottom:14px; border:1px solid #d1d5db; border-radius:12px; box-sizing:border-box; font-size:15px;"
-            />
-
-            <div style="display:flex; gap:10px;">
-              <button
-                onclick="signUp()"
-                style="flex:1; padding:12px 14px; border:none; border-radius:12px; background:#111827; color:white; font-size:14px; font-weight:600; cursor:pointer;"
-              >
-                Sign up
-              </button>
-              <button
-                onclick="signIn()"
-                style="flex:1; padding:12px 14px; border:1px solid #d1d5db; border-radius:12px; background:white; color:#111827; font-size:14px; font-weight:600; cursor:pointer;"
-              >
-                Log in
-              </button>
+      <main class="main">
+        <!-- AUTH -->
+        <div id="authScreen" class="screen center-screen">
+          <div class="card auth-card">
+            <div class="brand-title" style="font-size:42px; margin-bottom:12px;">BRKR</div>
+            <div class="muted small" style="margin-bottom:20px;">
+              Create an account or log in to access your workspace.
             </div>
 
-            <div id="authStatus" style="margin-top:14px; font-size:13px; color:#6b7280;"></div>
+            <input id="authEmail" type="email" placeholder="Email" class="text-input" style="width:100%; margin-bottom:10px;" />
+            <input id="authPassword" type="password" placeholder="Password" class="text-input" style="width:100%; margin-bottom:14px;" />
+
+            <div style="display:flex; gap:10px;">
+              <button onclick="signUp()" class="btn btn-primary btn-full" style="padding:12px 14px;">Sign up</button>
+              <button onclick="signIn()" class="btn btn-full" style="padding:12px 14px;">Log in</button>
+            </div>
+
+            <div id="authStatus" class="status" style="margin-top:14px;"></div>
           </div>
         </div>
 
-        <!-- LANGUAGE SCREEN -->
-        <div id="languageScreen" style="display:none; flex:1; align-items:center; justify-content:center; padding:24px;">
-          <div style="background:white; border:1px solid #e5e7eb; border-radius:18px; padding:32px; width:100%; max-width:520px; box-sizing:border-box;">
-            <div style="font-size:42px; font-weight:800; letter-spacing:-1px; margin-bottom:12px;">BRKR</div>
+        <!-- LANGUAGE -->
+        <div id="languageScreen" class="screen center-screen">
+          <div class="card">
+            <div class="brand-title" style="font-size:42px; margin-bottom:12px;">BRKR</div>
 
             <div style="font-size:18px; font-weight:700; margin-bottom:4px;">Select your language:</div>
             <div style="font-size:18px; font-weight:700; margin-bottom:4px;">Selecciona tu idioma:</div>
             <div style="font-size:18px; font-weight:700; margin-bottom:20px;">Sélectionnez votre langue :</div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-              <button onclick="setLanguage('en')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">English</button>
-              <button onclick="setLanguage('es')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">Español</button>
-              <button onclick="setLanguage('fr')" style="padding:14px 16px; border:none; border-radius:12px; background:#111827; color:white; font-size:15px; cursor:pointer;">Français</button>
-              <button onclick="setLanguage('other')" style="padding:14px 16px; border:1px solid #d1d5db; border-radius:12px; background:white; color:#111827; font-size:15px; cursor:pointer;">Other</button>
+            <div class="lang-grid">
+              <button onclick="setLanguage('en')" class="btn btn-primary" style="padding:14px 16px;">English</button>
+              <button onclick="setLanguage('es')" class="btn btn-primary" style="padding:14px 16px;">Español</button>
+              <button onclick="setLanguage('fr')" class="btn btn-primary" style="padding:14px 16px;">Français</button>
+              <button onclick="setLanguage('other')" class="btn" style="padding:14px 16px;">Other</button>
             </div>
           </div>
         </div>
 
-        <!-- CHAT SCREEN -->
-        <div id="chatScreen" style="display:none; flex:1; flex-direction:column; min-height:0;">
-          <div style="padding:20px; border-bottom:1px solid #e5e7eb; background:white;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+        <!-- CHAT -->
+        <div id="chatScreen" class="screen" style="flex-direction:column; min-height:0;">
+          <div class="topbar">
+            <div class="topbar-row">
               <div>
-                <div id="chatTitle" style="font-size:28px; font-weight:800; letter-spacing:-1px;">
-                  BRKR
-                </div>
-                <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
+                <div id="chatTitle" class="chat-title">BRKR</div>
+                <div id="topHint" class="muted small" style="margin-top:6px;">
                   Business decision engine.
                 </div>
               </div>
 
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button
-                  onclick="renameChat()"
-                  style="padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
-                >
-                  Rename
-                </button>
-
-                <button
-                  onclick="clearCurrentChat()"
-                  style="padding:10px 12px; font-size:13px; border:1px solid #d1d5db; border-radius:10px; background:white; color:#111827; cursor:pointer;"
-                >
-                  Clear chat
-                </button>
+              <div class="toolbar">
+                <button class="btn" onclick="renameChat()">Rename</button>
+                <button class="btn" onclick="clearCurrentChat()">Clear chat</button>
               </div>
             </div>
 
-            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
-              <div>
-                <label for="stage" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Stage</label>
-                <select id="stage" onchange="updateCurrentChatMeta()" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
+            <div class="controls-row">
+              <div class="field">
+                <label for="stage">Stage</label>
+                <select id="stage" class="select" onchange="updateCurrentChatMeta()">
                   <option value="IDEA">IDEA</option>
                   <option value="VALIDACION">VALIDATION</option>
                   <option value="OFERTA">OFFER</option>
@@ -149,9 +442,9 @@
                 </select>
               </div>
 
-              <div>
-                <label for="mode" style="display:block; font-size:12px; color:#6b7280; margin-bottom:4px;">Mode</label>
-                <select id="mode" onchange="updateCurrentChatMeta()" style="padding:10px 12px; font-size:14px; border:1px solid #d1d5db; border-radius:10px; background:white;">
+              <div class="field">
+                <label for="mode">Mode</label>
+                <select id="mode" class="select" onchange="updateCurrentChatMeta()">
                   <option value="AUTO">AUTO</option>
                   <option value="CODIR">CODIR</option>
                   <option value="CFO">CFO</option>
@@ -166,23 +459,19 @@
             </div>
           </div>
 
-          <div id="messages" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px;"></div>
+          <div id="messages" class="messages"></div>
 
-          <div style="border-top:1px solid #e5e7eb; background:white; padding:16px 20px 20px 20px;">
+          <div class="composer">
             <textarea
               id="userInput"
+              class="text-area"
               placeholder="Write here..."
-              rows="3"
-              style="width:100%; resize:none; padding:14px 16px; font-size:16px; line-height:1.5; border:1px solid #d1d5db; border-radius:14px; outline:none; box-sizing:border-box;"
+              rows="1"
             ></textarea>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:12px;">
-              <div id="status" style="font-size:13px; color:#6b7280;">Ready.</div>
-              <button
-                id="sendBtn"
-                onclick="sendMessage()"
-                style="padding:12px 18px; font-size:15px; font-weight:600; border:none; border-radius:12px; background:#111827; color:white; cursor:pointer;"
-              >
+            <div class="composer-footer">
+              <div id="status" class="status">Ready.</div>
+              <button id="sendBtn" class="btn btn-primary" onclick="sendMessage()" style="padding:10px 16px;">
                 Send
               </button>
             </div>
@@ -199,13 +488,15 @@
       const STORAGE_KEYS = {
         language: "brkr_lang",
         activeChatId: "brkr_active_chat_id",
-        legacyChats: "brkr_chats"
+        legacyChats: "brkr_chats",
+        theme: "brkr_theme"
       };
 
       let chats = [];
       let activeChatId = null;
       let currentUser = null;
 
+      const bodyEl = document.body;
       const sidebarEl = document.getElementById("sidebar");
       const authScreenEl = document.getElementById("authScreen");
       const authStatusEl = document.getElementById("authStatus");
@@ -221,6 +512,18 @@
       const modeEl = document.getElementById("mode");
       const chatTitleEl = document.getElementById("chatTitle");
       const userEmailEl = document.getElementById("userEmail");
+
+      function setTheme(theme) {
+        const finalTheme = theme === "dark" ? "dark" : "light";
+        bodyEl.classList.remove("theme-light", "theme-dark");
+        bodyEl.classList.add(finalTheme === "dark" ? "theme-dark" : "theme-light");
+        localStorage.setItem(STORAGE_KEYS.theme, finalTheme);
+      }
+
+      function initTheme() {
+        const saved = localStorage.getItem(STORAGE_KEYS.theme) || "light";
+        setTheme(saved);
+      }
 
       function showAuth() {
         sidebarEl.style.display = "none";
@@ -351,7 +654,7 @@
       }
 
       function getCurrentChat() {
-        return chats.find(chat => chat.id === activeChatId) || null;
+        return chats.find((chat) => chat.id === activeChatId) || null;
       }
 
       function saveActiveChatId() {
@@ -421,20 +724,6 @@
         }
       }
 
-      async function deleteChatFromSupabase(chatId) {
-        if (!currentUser || !chatId) return;
-
-        const { error } = await supabaseClient
-          .from("chats")
-          .delete()
-          .eq("id", chatId)
-          .eq("user_id", currentUser.id);
-
-        if (error) {
-          console.error("Delete chat error:", error);
-        }
-      }
-
       async function migrateLegacyLocalChatsIfNeeded() {
         if (!currentUser) return;
 
@@ -479,7 +768,7 @@
         return firstUserMessage.content.trim().slice(0, 36) || "New chat";
       }
 
-      function renameChat() {
+      async function renameChat() {
         const chat = getCurrentChat();
         if (!chat) return;
 
@@ -492,7 +781,7 @@
         if (!cleanName) return;
 
         chat.title = cleanName;
-        persistCurrentState();
+        await persistCurrentState();
       }
 
       function renderChatList() {
@@ -502,12 +791,7 @@
           const isActive = chat.id === activeChatId;
 
           const item = document.createElement("div");
-          item.style.padding = "12px 12px";
-          item.style.marginBottom = "8px";
-          item.style.borderRadius = "12px";
-          item.style.cursor = "pointer";
-          item.style.border = isActive ? "1px solid #111827" : "1px solid #e5e7eb";
-          item.style.background = isActive ? "#f9fafb" : "#ffffff";
+          item.className = `chat-item ${isActive ? "active" : ""}`;
           item.onclick = () => switchChat(chat.id);
 
           const title = document.createElement("div");
@@ -522,7 +806,7 @@
           meta.textContent = `${chat.stage || "IDEA"} · ${chat.mode || "AUTO"}`;
           meta.style.marginTop = "4px";
           meta.style.fontSize = "12px";
-          meta.style.color = "#6b7280";
+          meta.style.color = "var(--muted)";
 
           item.appendChild(title);
           item.appendChild(meta);
@@ -532,25 +816,16 @@
 
       function addBubble(role, content) {
         const isUser = role === "user";
-        const wrapper = document.createElement("div");
-        wrapper.style.display = "flex";
-        wrapper.style.justifyContent = isUser ? "flex-end" : "flex-start";
+
+        const row = document.createElement("div");
+        row.className = `bubble-row ${isUser ? "user" : "assistant"}`;
 
         const bubble = document.createElement("div");
-        bubble.style.maxWidth = "760px";
-        bubble.style.padding = "14px 16px";
-        bubble.style.borderRadius = "14px";
-        bubble.style.border = "1px solid #e5e7eb";
-        bubble.style.background = isUser ? "#111827" : "#ffffff";
-        bubble.style.color = isUser ? "#ffffff" : "#111827";
-        bubble.style.lineHeight = "1.5";
+        bubble.className = `bubble ${isUser ? "user" : "assistant"}`;
 
         const label = document.createElement("div");
+        label.className = "bubble-label";
         label.textContent = isUser ? "You" : "BRKR";
-        label.style.fontSize = "12px";
-        label.style.fontWeight = "700";
-        label.style.marginBottom = "6px";
-        label.style.color = isUser ? "#d1d5db" : "#6b7280";
 
         const body = document.createElement("div");
         body.innerHTML = isUser
@@ -559,38 +834,12 @@
 
         bubble.appendChild(label);
         bubble.appendChild(body);
-        wrapper.appendChild(bubble);
-        messagesEl.appendChild(wrapper);
+        row.appendChild(bubble);
+        messagesEl.appendChild(row);
       }
 
       function addSystemWelcome(text) {
-        const wrapper = document.createElement("div");
-        wrapper.style.display = "flex";
-        wrapper.style.justifyContent = "flex-start";
-
-        const bubble = document.createElement("div");
-        bubble.style.maxWidth = "760px";
-        bubble.style.padding = "14px 16px";
-        bubble.style.borderRadius = "14px";
-        bubble.style.border = "1px solid #e5e7eb";
-        bubble.style.background = "#ffffff";
-        bubble.style.color = "#111827";
-        bubble.style.lineHeight = "1.5";
-
-        const label = document.createElement("div");
-        label.textContent = "BRKR";
-        label.style.fontSize = "12px";
-        label.style.fontWeight = "700";
-        label.style.marginBottom = "6px";
-        label.style.color = "#6b7280";
-
-        const body = document.createElement("div");
-        body.innerHTML = escapeHtml(text);
-
-        bubble.appendChild(label);
-        bubble.appendChild(body);
-        wrapper.appendChild(bubble);
-        messagesEl.appendChild(wrapper);
+        addBubble("assistant", text);
       }
 
       function getWelcomeMessage() {
@@ -806,6 +1055,8 @@
       }
 
       async function init() {
+        initTheme();
+
         const { data } = await supabaseClient.auth.getSession();
 
         if (!data.session) {
