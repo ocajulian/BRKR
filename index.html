@@ -60,7 +60,14 @@
           <div style="padding:20px; border-bottom:1px solid #e5e7eb; background:white;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
               <div>
-                <div id="chatTitle" style="font-size:28px; font-weight:800; letter-spacing:-1px;">BRKR</div>
+                <div
+                  id="chatTitle"
+                  onclick="renameChat()"
+                  style="font-size:28px; font-weight:800; letter-spacing:-1px; cursor:pointer;"
+                  title="Click to rename"
+                >
+                  BRKR
+                </div>
                 <div id="topHint" style="margin-top:6px; font-size:14px; color:#6b7280;">
                   Business decision engine.
                 </div>
@@ -258,6 +265,21 @@
         const firstUserMessage = chat.conversation.find(msg => msg.role === "user");
         if (!firstUserMessage) return "New chat";
         return firstUserMessage.content.trim().slice(0, 36) || "New chat";
+      }
+
+      function renameChat() {
+        const chat = getCurrentChat();
+        if (!chat) return;
+
+        const currentName = chat.title || "New chat";
+        const newName = prompt("Rename chat:", currentName);
+
+        if (!newName) return;
+
+        chat.title = newName.trim() || currentName;
+        saveChats();
+        renderChatList();
+        renderCurrentChat();
       }
 
       function renderChatList() {
