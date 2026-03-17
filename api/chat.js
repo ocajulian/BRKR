@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     VALIDACION:
       "ETAPA VALIDACION: busca evidencia real. No aceptes intuiciones como prueba. Prioriza señal antes que entusiasmo.",
     OFERTA:
-      "ETAPA OFERTA: define una oferta mínima validable. Prioriza: 1 producto, 1 problema, 1 promesa, 1 precio. El objetivo no es optimizar ni enriquecer, es validar si alguien paga. Prohibido añadir: bundles, comunidad, suscripciones, descuentos, múltiples productos, features extra o contenido adicional. Si aparecen, elimínalos. La oferta debe poder lanzarse en menos de 48h.",
+      "ETAPA OFERTA: define una oferta mínima validable. Prioriza: 1 producto, 1 problema, 1 promesa, 1 precio. El objetivo es validar pago real, no optimizar. Prohibido añadir: múltiples productos, bundles, comunidad, encuestas, descuentos, contenido extra o features adicionales. No uses Ads en esta etapa salvo que no haya alternativa directa. La validación es: alguien intenta pagar. Todo lo demás es secundario. La oferta debe poder lanzarse en menos de 48h.",
     ADS:
       "ETAPA ADS: crea mensajes de adquisición o validación. Elige un ángulo claro y una métrica simple.",
   };
