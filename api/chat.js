@@ -8,6 +8,7 @@ export default async function handler(req, res) {
     stage = "IDEA",
     mode = "AUTO",
     history = [],
+    language = "en",
   } = req.body || {};
 
   if (!message || typeof message !== "string") {
@@ -21,9 +22,20 @@ export default async function handler(req, res) {
 
   const masterPrompt =
     process.env.BRKR_SYSTEM_PROMPT ||
-    "Eres BRKR. IA de ejecución business. Directo, claro y accionable. Siempre cierras con una acción, decisión o pregunta que desbloquee avance.";
+    "Eres BRKR. IA de ejecución business. Directo, claro y accionable. Siempre cierras con una acción, decisión contextual o pregunta que desbloquee avance real.";
 
-  const normalizedStage = String(stage).toUpperCase();
+  const normalizedStageInput = String(stage).toUpperCase();
+
+  const stageAliases = {
+    IDEA: "IDEA",
+    VALIDACION: "VALIDACION",
+    VALIDATION: "VALIDACION",
+    OFERTA: "OFERTA",
+    OFFER: "OFERTA",
+    ADS: "ADS",
+  };
+
+  const normalizedStage = stageAliases[normalizedStageInput] || "IDEA";
 
   const stagePrompts = {
     IDEA:
@@ -33,7 +45,7 @@ export default async function handler(req, res) {
     OFERTA:
       "ETAPA OFERTA: define la oferta mínima para validar pago real en menos de 48h. Prioriza solo: 1 producto, 1 problema, 1 promesa, 1 precio y 1 canal directo. Prohibido añadir: múltiples productos, bundles, comunidad, suscripciones, descuentos, testimonios, encuestas, contenido extra, features adicionales o mejoras de UX. Prohibido proponer Ads en esta etapa si el test puede hacerse con contacto directo, red personal, DMs, comunidades o outreach manual a 20 personas. La única señal que importa es: alguien intenta pagar. Si propones algo más complejo, elimínalo.",
     ADS:
-      "ETAPA ADS: crea mensajes de adquisición o validación. Elige un ángulo claro y una métrica simple.",
+      "ETAPA ADS: crea mensajes de adquisición o validación. Elige un ángulo claro y una métrica simple. Nada de teatro de marketing.",
   };
 
   function detectMode(text) {
@@ -45,11 +57,14 @@ export default async function handler(req, res) {
       t.includes("costo") ||
       t.includes("costos") ||
       t.includes("precio") ||
-      t.includes("margen") ||
+      t.includes("cuánto cuesta") ||
+      t.includes("estimación") ||
+      t.includes("escenario") ||
+      t.includes("presupuesto") ||
       t.includes("runway") ||
-      t.includes("flujo de caja") ||
       t.includes("cashflow") ||
-      t.includes("presupuesto")
+      t.includes("flujo de caja") ||
+      t.includes("margen")
     ) {
       return "CFO";
     }
@@ -123,14 +138,18 @@ export default async function handler(req, res) {
     return "CODIR";
   }
 
+  const autoDetected = detectMode(message);
+
   const resolvedMode =
     String(mode).toUpperCase() === "AUTO"
-      ? detectMode(message)
+      ? autoDetected === "CODIR" && message.toLowerCase().includes("cost")
+        ? "CFO"
+        : autoDetected
       : String(mode).toUpperCase();
 
   const modePrompts = {
     CODIR:
-      "MODO CODIR: eres co-director. Tomas control del proceso. Si falta información, haces supuestos razonables y avanzas en paralelo, no bloqueas el flujo. No haces formularios ni listas interminables. Sintetizas lo ya dicho, reduces ambigüedad y llevas al siguiente paso real. Solo pides información crítica si bloquea una decisión. Siempre avanzas. No fuerces una decisión GO/ITERAR/STOP si no aplica. Prioriza siguiente paso accionable. Si el usuario está definiendo una oferta, reduces scope antes de enriquecer. Prefieres una oferta simple, vendible y testeable en 48 horas antes que una oferta rica pero difícil de validar. Si el usuario está en etapa OFERTA, reduces todo a la versión más simple posible que permita validar pago real. En OFERTA no propones Ads, encuestas, testimonios ni extras salvo que el usuario los pida explícitamente.", 
+      "MODO CODIR: eres co-director. Tomas control del proceso. Si falta información, haces supuestos razonables y avanzas en paralelo, no bloqueas el flujo. No haces formularios ni listas interminables. Sintetizas lo ya dicho, reduces ambigüedad y llevas al siguiente paso real. Solo pides información crítica si bloquea una decisión. Siempre avanzas. No fuerces una decisión GO/ITERAR/STOP si no aplica. Prioriza siguiente paso accionable. Si el usuario está definiendo una oferta, reduces scope antes de enriquecer. Prefieres una oferta simple, vendible y testeable en 48 horas antes que una oferta rica pero difícil de validar. Si el usuario está en etapa OFERTA, reduces todo a la versión más simple posible que permita validar pago real. En OFERTA no propones Ads, encuestas, testimonios ni extras salvo que el usuario los pida explícitamente.",
     CFO:
       "MODO CFO: actúas como CFO. Modela el peor escenario realista para 30 días. Asume 0 ingresos. No expliques teoría. No uses placeholders. No inventes equipos grandes ni costes enterprise sin motivo. Da rangos razonables para un emprendedor solo o equipo pequeño. Siempre responde con: 1) supuestos, 2) coste MVP mínimo, 3) coste adquisición/test, 4) coste herramientas, 5) coste tiempo del fundador, 6) total 30 días, 7) decisión final obligatoria: elige SOLO una opción (GO, ITERAR o STOP). No listes opciones. No expliques las tres. Toma una decisión clara basada en el escenario. Regla: en etapa VALIDACIÓN, STOP solo si el coste es alto (>3000€) y no hay forma de reducirlo; ITERAR si el coste es moderado (500€–3000€) y puede optimizarse; GO si el coste es bajo (<500€) y permite validar rápido.",
     CTO:
@@ -147,6 +166,15 @@ export default async function handler(req, res) {
       "MODO FORMACION: enseña solo lo mínimo necesario para ejecutar ahora. Explicación breve, ejemplo simple y tarea inmediata.",
   };
 
+  const languagePrompt =
+    language === "es"
+      ? "Responde en español."
+      : language === "fr"
+      ? "Réponds en français."
+      : language === "other"
+      ? "Reply in the user's language."
+      : "Reply in English.";
+
   const stagePrompt = stagePrompts[normalizedStage] || stagePrompts.IDEA;
   const modePrompt = modePrompts[resolvedMode] || modePrompts.CODIR;
 
@@ -159,7 +187,7 @@ export default async function handler(req, res) {
             typeof m.content === "string" &&
             m.content.trim()
         )
-        .slice(-12)
+        .slice(-20)
         .map((m) => ({
           role: m.role,
           content: m.content,
@@ -168,18 +196,13 @@ export default async function handler(req, res) {
 
   const inputMessages = [
     { role: "system", content: masterPrompt },
+    { role: "system", content: languagePrompt },
     { role: "system", content: stagePrompt },
     { role: "system", content: modePrompt },
     ...sanitizedHistory,
   ];
 
   try {
-    console.log("BRKR request:", {
-      stage: normalizedStage,
-      mode: resolvedMode,
-      historyCount: sanitizedHistory.length,
-    });
-
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -217,8 +240,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       reply: text,
       meta: {
-        stage: normalizedStage,
-        mode: resolvedMode,
+        stage_requested: normalizedStageInput,
+        stage_used: normalizedStage,
+        mode_requested: String(mode).toUpperCase(),
+        mode_used: resolvedMode,
+        language_used: language,
       },
     });
   } catch (e) {
