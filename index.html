@@ -338,6 +338,7 @@
         chats = [];
         activeChatId = null;
         isSending = false;
+        setLoading(false);
         showAuth();
       }
 
@@ -496,6 +497,7 @@
 
       async function saveChatToSupabase(chat) {
         if (!currentUser || !chat) return;
+
         const timestamp = new Date().toISOString();
         chat.updated_at = timestamp;
 
@@ -509,9 +511,27 @@
           updated_at: timestamp
         };
 
-        const { error } = await supabaseClient.from("chats").upsert(payload);
-        if (error) console.error("Save chat error:", error);
+        const savePromise = supabaseClient.from("chats").upsert(payload);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Supabase save timeout")), 8000)
+        );
+
+        try {
+          const result = await Promise.race([savePromise, timeoutPromise]);
+          if (result?.error) {
+            console.error("Save chat error:", result.error);
+          }
+        } catch (error) {
+          console.error("Save chat timeout/error:", error);
+        }
+
         saveChatsCache();
+      }
+
+      function queueRemoteSave(chat) {
+        saveChatToSupabase(chat).catch((error) => {
+          console.error("Background save failed:", error);
+        });
       }
 
       async function migrateLegacyLocalChatsIfNeeded() {
@@ -568,7 +588,7 @@
         const cleanName = newName.trim();
         if (!cleanName) return;
         chat.title = cleanName;
-        await persistCurrentState();
+        await persistCurrentState({ syncRemote: true });
       }
 
       function renderChatList() {
@@ -707,7 +727,7 @@
         renderChatList();
         renderCurrentChat();
         saveChatsCache();
-        await saveChatToSupabase(newChat);
+        queueRemoteSave(newChat);
       }
 
       async function clearCurrentChat() {
@@ -715,7 +735,7 @@
         if (!chat) return;
         chat.conversation = [];
         chat.title = "New chat";
-        await persistCurrentState();
+        await persistCurrentState({ syncRemote: true });
       }
 
       async function updateCurrentChatMeta() {
@@ -723,16 +743,21 @@
         if (!chat) return;
         chat.stage = stageEl.value;
         chat.mode = modeEl.value;
-        await persistCurrentState();
+        await persistCurrentState({ syncRemote: true });
       }
 
-      async function persistCurrentState() {
+      async function persistCurrentState(options = {}) {
+        const { syncRemote = true } = options;
         const chat = getCurrentChat();
         if (!chat) return;
+
         renderChatList();
         renderCurrentChat();
         saveChatsCache();
-        await saveChatToSupabase(chat);
+
+        if (syncRemote) {
+          await saveChatToSupabase(chat);
+        }
       }
 
       inputEl.addEventListener("input", autosizeTextarea);
@@ -764,7 +789,8 @@
           chat.title = deriveChatTitle(chat);
         }
 
-        await persistCurrentState();
+        await persistCurrentState({ syncRemote: false });
+        queueRemoteSave(chat);
 
         inputEl.value = "";
         autosizeTextarea();
@@ -796,7 +822,7 @@
             data = JSON.parse(raw);
           } catch {
             chat.conversation.push({ role: "assistant", content: raw, meta: null });
-            await persistCurrentState();
+            await persistCurrentState({ syncRemote: false });
             return;
           }
 
@@ -806,7 +832,8 @@
             content: reply,
             meta: data.meta || null
           });
-          await persistCurrentState();
+
+          await persistCurrentState({ syncRemote: false });
         } catch (err) {
           const msg =
             err.name === "AbortError"
@@ -814,10 +841,12 @@
               : `Error: ${String(err)}`;
 
           chat.conversation.push({ role: "assistant", content: msg, meta: null });
-          await persistCurrentState();
+          await persistCurrentState({ syncRemote: false });
         } finally {
           clearTimeout(timeout);
           setLoading(false);
+          queueRemoteSave(chat);
+          inputEl.focus();
         }
       }
 
@@ -839,7 +868,7 @@
           chats = mergeChats(freshRemote, loadChatsCache());
         } else {
           for (const chat of chats) {
-            await saveChatToSupabase(chat);
+            queueRemoteSave(chat);
           }
         }
 
@@ -854,6 +883,7 @@
         renderChatList();
         renderCurrentChat();
         autosizeTextarea();
+        setLoading(false);
       }
 
       async function bootAfterAuth() {
