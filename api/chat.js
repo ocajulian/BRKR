@@ -89,28 +89,28 @@ export default async function handler(req, res) {
     { role: "user", content: message },
   ];
 
-  // ===== CODIR FIX =====
+  // ===== CODIR (GENERALISTA) =====
   function forceCodir(text, mode) {
     if (mode !== "CODIR") return text;
 
-    return `1) Decisión: vamos a asumir que estás resolviendo un problema de captación de clientes para un nicho específico.
+    return `1) Decisión: vamos a asumir que estás resolviendo un problema concreto para un tipo de cliente específico. No vamos a seguir en abstracto.
 
-2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar interés.`;
+2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar si ese problema les importa.`;
   }
 
-  // ===== CFO FIX (SIEMPRE FORZADO) =====
+  // ===== CFO (GENERALISTA) =====
   function forceCfo(text, mode) {
     if (mode !== "CFO") return text;
 
     return `1) Supuestos
-- Estás validando un e-book simple como producto
+- Estás validando una idea simple
 - Trabajas solo
-- Objetivo: validar interés real, no escalar
+- No hay ingresos en 30 días
+- Objetivo: validar interés real
 
 2) Costes
-- Creación contenido: 0€ (lo haces tú)
 - Herramientas: 20–50€
-- Test adquisición (mínimo): 100–200€
+- Test adquisición: 100–200€
 - Otros: 0–50€
 
 3) Total 30 días
@@ -118,6 +118,31 @@ export default async function handler(req, res) {
 
 4) Decisión
 ITERAR`;
+  }
+
+  // ===== CTO (GENERALISTA) =====
+  function forceCto(text, mode) {
+    if (mode !== "CTO") return text;
+
+    return `1) Objetivo del MVP
+Validar si alguien está dispuesto a pagar por la solución.
+
+2) Qué construir ahora
+- 1 versión mínima del producto
+- 1 forma simple de explicarlo
+- 1 mecanismo de pago o compromiso
+
+3) Qué NO construir
+- funcionalidades extra
+- automatizaciones
+- branding complejo
+- múltiples versiones
+
+4) Riesgo principal
+Que no haya interés real → problema de demanda
+
+5) Acción
+Define en una frase qué vendes y envíalo hoy a 3 potenciales clientes`;
   }
 
   try {
@@ -156,6 +181,7 @@ ITERAR`;
 
     let finalText = forceCodir(text, resolvedMode);
     finalText = forceCfo(finalText, resolvedMode);
+    finalText = forceCto(finalText, resolvedMode);
 
     return res.status(200).json({
       reply: finalText,
