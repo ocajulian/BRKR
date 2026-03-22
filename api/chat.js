@@ -177,6 +177,23 @@ export default async function handler(req, res) {
       return "PM";
     }
 
+    // SCRAPPING
+    if (
+      current.includes("lead") ||
+      current.includes("leads") ||
+      current.includes("lista") ||
+      current.includes("contactos") ||
+      current.includes("decisores") ||
+      current.includes("decision makers") ||
+      current.includes("decision maker") ||
+      current.includes("prospectos") ||
+      current.includes("prospects") ||
+      current.includes("linkedin") ||
+      current.includes("base de datos de contactos")
+    ) {
+      return "SCRAPPING";
+    }
+
     // CTO
     if (
       current.includes("mvp") ||
@@ -189,16 +206,6 @@ export default async function handler(req, res) {
       current.includes("servicio")
     ) {
       return "CTO";
-    }
-
-    // SCRAPPING
-    if (
-      current.includes("lead") ||
-      current.includes("lista") ||
-      current.includes("contactos") ||
-      current.includes("decisores")
-    ) {
-      return "SCRAPPING";
     }
 
     // FORMACION
@@ -417,30 +424,19 @@ ${action}`;
 
     let weeklyGoal = "cerrar una validacion simple sin dispersarte";
     let deliverables = [
-      "definir el foco de esta semana",
-      "preparar el material minimo necesario",
-      "ejecutar un test real",
+      "1 entregable principal cerrado",
+      "1 material de soporte minimo",
+      "1 test o envio real hecho",
     ];
     let executionOrder = [
-      "fijar una unica prioridad",
-      "preparar el activo minimo",
-      "hacer el test",
+      "cerrar el entregable principal",
+      "preparar el soporte minimo",
+      "ejecutar el test o envio real",
     ];
-    let nextAction = "escribe ahora la unica prioridad operativa de esta semana";
+    let nextAction = "define ahora el entregable unico que debe quedar cerrado esta semana";
 
     if (current.includes("esta semana") || current.includes("entregables")) {
-      weeklyGoal = "terminar una semana con un output concreto y verificable";
-      deliverables = [
-        "1 entregable principal cerrado",
-        "1 material de soporte minimo",
-        "1 test o envio real hecho",
-      ];
-      executionOrder = [
-        "cerrar el entregable principal",
-        "preparar soporte minimo",
-        "ejecutar el envio o test",
-      ];
-      nextAction = "define ahora el entregable unico que debe quedar cerrado esta semana";
+      weeklyGoal = "terminar la semana con un output concreto y verificable";
     }
 
     return `1) Objetivo semanal
@@ -455,6 +451,72 @@ ${weeklyGoal}
 - ${executionOrder[0]}
 - ${executionOrder[1]}
 - ${executionOrder[2]}
+
+4) Acción
+${nextAction}`;
+  }
+
+  function forceScrapping(text, mode, originalMessage) {
+    if (mode !== "SCRAPPING") return text;
+
+    const current = normalizeText(originalMessage);
+
+    let targetProfile = "decisores del tipo de cliente mas cercano al problema que quieres validar";
+    let selectionCriteria = [
+      "empresa o proyecto dentro del nicho correcto",
+      "rol con capacidad real de decision",
+      "senales publicas de necesidad o contexto relevante",
+    ];
+    let fields = [
+      "nombre",
+      "empresa",
+      "cargo",
+      "linkedin o web",
+      "email o via de contacto",
+    ];
+    let nextAction = "define hoy un nicho concreto y prepara una lista inicial de 10 decisores reales";
+
+    if (
+      current.includes("clinica") ||
+      current.includes("clinica dental") ||
+      current.includes("clinicas") ||
+      current.includes("clinicas dentales")
+    ) {
+      targetProfile = "duenos, gerentes o responsables de crecimiento de clinicas dentales";
+      selectionCriteria = [
+        "clinicas activas en la ciudad o zona objetivo",
+        "cargo con poder de decision",
+        "presencia publica verificable en web o linkedin",
+      ];
+      nextAction = "elige una ciudad y prepara una lista inicial de 10 clinicas con un decisor verificable";
+    } else if (
+      current.includes("saas") ||
+      current.includes("software") ||
+      current.includes("b2b")
+    ) {
+      targetProfile = "fundadores, heads of growth o responsables comerciales de empresas B2B";
+      selectionCriteria = [
+        "empresa dentro del segmento correcto",
+        "rol con influencia directa sobre ventas o crecimiento",
+        "senal publica de que el problema es relevante",
+      ];
+      nextAction = "elige un segmento B2B concreto y crea una lista inicial de 10 empresas con decisor claro";
+    }
+
+    return `1) Perfil objetivo
+${targetProfile}
+
+2) Criterios de selección
+- ${selectionCriteria[0]}
+- ${selectionCriteria[1]}
+- ${selectionCriteria[2]}
+
+3) Campos a capturar
+- ${fields[0]}
+- ${fields[1]}
+- ${fields[2]}
+- ${fields[3]}
+- ${fields[4]}
 
 4) Acción
 ${nextAction}`;
@@ -501,6 +563,7 @@ ${nextAction}`;
     finalText = forceCopywriter(finalText, resolvedMode, message);
     finalText = forceCmo(finalText, resolvedMode, message);
     finalText = forcePm(finalText, resolvedMode, message);
+    finalText = forceScrapping(finalText, resolvedMode, message);
 
     return res.status(200).json({
       reply: finalText,
