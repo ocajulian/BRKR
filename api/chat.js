@@ -62,62 +62,16 @@ export default async function handler(req, res) {
     return terms.some((t) => text.includes(t));
   }
 
-  function detectBlockedDomains(text, domainTerms) {
-    const negativeOpeners = [
-      "sin",
-      "todavia no",
-      "no quiero",
-      "no meterme en",
-      "no entrar en",
-      "sin meterme en",
-      "without",
-      "not yet",
-      "i dont want",
-      "i do not want",
-    ];
-
-    const blocked = new Set();
-
-    for (const opener of negativeOpeners) {
-      const openerIndex = text.indexOf(opener);
-      if (openerIndex === -1) continue;
-
-      const window = text.slice(openerIndex, openerIndex + 120);
-
-      for (const [domain, terms] of Object.entries(domainTerms)) {
-        if (terms.some((term) => window.includes(term))) {
-          blocked.add(domain);
-        }
-      }
-    }
-
-    return blocked;
-  }
-
   function detectAutoMode({ stage, message }) {
     const current = normalizeText(message);
 
-    const cfoTerms = ["cost", "precio", "pricing", "budget"];
-    const ctoTerms = ["mvp", "build", "construir", "stack"];
-    const copywriterTerms = ["dm", "copy", "mensaje", "headline"];
-    const scrappingTerms = ["lista", "leads", "decisores"];
-    const pmTerms = ["plan", "timeline", "roadmap"];
-    const trainingTerms = ["explica", "teach", "como funciona"];
-    const cmoTerms = ["ads", "campaña", "trafico"];
-
-    const blockedDomains = detectBlockedDomains(current, {
-      CFO: ["cost", "precio", "pricing"],
-      CTO: ["mvp", "build", "producto"],
-      CMO: ["ads", "campaña"],
-    });
-
-    if (includesAny(current, copywriterTerms)) return "COPYWRITER";
-    if (!blockedDomains.has("CFO") && includesAny(current, cfoTerms)) return "CFO";
-    if (!blockedDomains.has("CTO") && includesAny(current, ctoTerms)) return "CTO";
-    if (includesAny(current, scrappingTerms)) return "SCRAPPING";
-    if (includesAny(current, pmTerms)) return "PM";
-    if (includesAny(current, trainingTerms)) return "FORMACION";
-    if (!blockedDomains.has("CMO") && includesAny(current, cmoTerms)) return "CMO";
+    if (current.includes("dm") || current.includes("copy")) return "COPYWRITER";
+    if (current.includes("cost") || current.includes("precio")) return "CFO";
+    if (current.includes("mvp") || current.includes("build")) return "CTO";
+    if (current.includes("lead") || current.includes("lista")) return "SCRAPPING";
+    if (current.includes("plan") || current.includes("roadmap")) return "PM";
+    if (current.includes("explica") || current.includes("teach")) return "FORMACION";
+    if (current.includes("ads") || current.includes("campaign")) return "CMO";
 
     return "CODIR";
   }
@@ -127,10 +81,7 @@ export default async function handler(req, res) {
 
   const resolvedMode =
     safeRequestedMode === "AUTO"
-      ? detectAutoMode({
-          stage: normalizedStage,
-          message,
-        })
+      ? detectAutoMode({ stage: normalizedStage, message })
       : safeRequestedMode;
 
   const inputMessages = [
@@ -141,6 +92,31 @@ export default async function handler(req, res) {
     ...sanitizedHistory,
     { role: "user", content: message },
   ];
+
+  function forceCodirIfWeak(text, mode) {
+    if (mode !== "CODIR") return text;
+
+    const lower = text.toLowerCase();
+
+    const weakPatterns = [
+      "define el problema",
+      "define problema",
+      "falta de claridad",
+      "no está claro",
+      "describe el problema",
+      "identifica el problema",
+      "quién es tu cliente",
+      "define tu cliente",
+    ];
+
+    const isWeak = weakPatterns.some((p) => lower.includes(p));
+
+    if (!isWeak) return text;
+
+    return `1) Decisión: vamos a asumir que estás resolviendo un problema de captación de clientes para un nicho específico. No vamos a definir más teoría.
+
+2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar interés.`;
+  }
 
   try {
     const r = await fetch("https://api.openai.com/v1/responses", {
@@ -176,8 +152,10 @@ export default async function handler(req, res) {
         : "") ||
       "No pude generar respuesta.";
 
+    const finalText = forceCodirIfWeak(text, resolvedMode);
+
     return res.status(200).json({
-      reply: text,
+      reply: finalText,
       meta: {
         stage_requested: normalizedStageInput,
         stage_used: normalizedStage,
