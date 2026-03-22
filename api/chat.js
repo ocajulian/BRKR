@@ -61,38 +61,37 @@ export default async function handler(req, res) {
   function detectAutoMode({ message }) {
     const current = normalizeText(message);
 
-    // COPY
     if (current.includes("dm") || current.includes("copy") || current.includes("mensaje")) return "COPYWRITER";
 
-    // CFO
     if (current.includes("cost") || current.includes("precio") || current.includes("cuanto cuesta")) return "CFO";
 
-    // CTO (MEJORADO)
     if (
       current.includes("mvp") ||
       current.includes("build") ||
       current.includes("crear") ||
-      current.includes("crear una app") ||
       current.includes("app") ||
-      current.includes("plataforma") ||
-      current.includes("software") ||
-      current.includes("servicio") ||
-      current.includes("producto")
+      current.includes("producto") ||
+      current.includes("servicio")
     ) {
       return "CTO";
     }
 
-    // SCRAPPING
-    if (current.includes("lead") || current.includes("lista") || current.includes("contactos")) return "SCRAPPING";
+    // OFERTA trigger
+    if (
+      current.includes("oferta") ||
+      current.includes("offer") ||
+      current.includes("vender") ||
+      current.includes("precio") ||
+      current.includes("cliente") ||
+      current.includes("propuesta")
+    ) {
+      return "OFERTA";
+    }
 
-    // PM
-    if (current.includes("plan") || current.includes("roadmap") || current.includes("timeline")) return "PM";
-
-    // FORMACION
-    if (current.includes("explica") || current.includes("teach") || current.includes("como funciona")) return "FORMACION";
-
-    // CMO
-    if (current.includes("ads") || current.includes("campaign") || current.includes("trafico")) return "CMO";
+    if (current.includes("lead") || current.includes("lista")) return "SCRAPPING";
+    if (current.includes("plan") || current.includes("roadmap")) return "PM";
+    if (current.includes("explica") || current.includes("teach")) return "FORMACION";
+    if (current.includes("ads") || current.includes("campaign")) return "CMO";
 
     return "CODIR";
   }
@@ -167,12 +166,35 @@ Que no haya interés real
 Define en una frase qué vendes y envíalo hoy a 3 potenciales clientes`;
   }
 
+  // ===== OFERTA =====
+  function forceOferta(text, mode) {
+    if (mode !== "OFERTA") return text;
+
+    return `1) Problema
+Define un problema específico y urgente.
+
+2) Cliente
+Define un único tipo de cliente claro.
+
+3) Promesa
+Qué resultado concreto obtiene.
+
+4) Precio
+Un único precio claro.
+
+5) Canal
+Cómo lo vas a ofrecer (directo, sin ads complejos).
+
+6) Acción
+Escribe el mensaje y envíalo hoy a 5 personas`;
+  }
+
   try {
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: \`Bearer \${apiKey}\`,
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
@@ -197,13 +219,14 @@ Define en una frase qué vendes y envíalo hoy a 3 potenciales clientes`;
             .flatMap((o) => o.content || [])
             .map((c) => c.text)
             .filter(Boolean)
-            .join("\n")
+            .join("\\n")
         : "") ||
       "No pude generar respuesta.";
 
     let finalText = forceCodir(text, resolvedMode);
     finalText = forceCfo(finalText, resolvedMode);
     finalText = forceCto(finalText, resolvedMode);
+    finalText = forceOferta(finalText, resolvedMode);
 
     return res.status(200).json({
       reply: finalText,
