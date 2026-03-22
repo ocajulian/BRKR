@@ -73,13 +73,12 @@ export default async function handler(req, res) {
       "no entrar en",
       "without",
       "not yet",
-      "no "
+      "no ",
     ];
 
     for (const term of terms) {
       for (const opener of openers) {
-        const pattern = `${opener} ${term}`;
-        if (text.includes(pattern)) return true;
+        if (text.includes(`${opener} ${term}`)) return true;
       }
     }
 
@@ -155,15 +154,27 @@ export default async function handler(req, res) {
       return "OFFER";
     }
 
-    // CMO — solo si marketing/adquisición NO está negado
+    // CMO
     if (
       !cmoNegated &&
-      (
-        stage === "ADS" ||
-        hasAny(current, cmoTerms)
-      )
+      (stage === "ADS" || hasAny(current, cmoTerms))
     ) {
       return "CMO";
+    }
+
+    // PM
+    if (
+      current.includes("plan") ||
+      current.includes("roadmap") ||
+      current.includes("timeline") ||
+      current.includes("entregables") ||
+      current.includes("orden de ejecucion") ||
+      current.includes("orden de ejecución") ||
+      current.includes("esta semana") ||
+      current.includes("siguiente paso") ||
+      current.includes("prioridades")
+    ) {
+      return "PM";
     }
 
     // CTO
@@ -188,16 +199,6 @@ export default async function handler(req, res) {
       current.includes("decisores")
     ) {
       return "SCRAPPING";
-    }
-
-    // PM
-    if (
-      current.includes("plan") ||
-      current.includes("roadmap") ||
-      current.includes("timeline") ||
-      current.includes("entregables")
-    ) {
-      return "PM";
     }
 
     // FORMACION
@@ -409,6 +410,56 @@ ${metric}
 ${action}`;
   }
 
+  function forcePm(text, mode, originalMessage) {
+    if (mode !== "PM") return text;
+
+    const current = normalizeText(originalMessage);
+
+    let weeklyGoal = "cerrar una validacion simple sin dispersarte";
+    let deliverables = [
+      "definir el foco de esta semana",
+      "preparar el material minimo necesario",
+      "ejecutar un test real",
+    ];
+    let executionOrder = [
+      "fijar una unica prioridad",
+      "preparar el activo minimo",
+      "hacer el test",
+    ];
+    let nextAction = "escribe ahora la unica prioridad operativa de esta semana";
+
+    if (current.includes("esta semana") || current.includes("entregables")) {
+      weeklyGoal = "terminar una semana con un output concreto y verificable";
+      deliverables = [
+        "1 entregable principal cerrado",
+        "1 material de soporte minimo",
+        "1 test o envio real hecho",
+      ];
+      executionOrder = [
+        "cerrar el entregable principal",
+        "preparar soporte minimo",
+        "ejecutar el envio o test",
+      ];
+      nextAction = "define ahora el entregable unico que debe quedar cerrado esta semana";
+    }
+
+    return `1) Objetivo semanal
+${weeklyGoal}
+
+2) Entregables
+- ${deliverables[0]}
+- ${deliverables[1]}
+- ${deliverables[2]}
+
+3) Orden de ejecución
+- ${executionOrder[0]}
+- ${executionOrder[1]}
+- ${executionOrder[2]}
+
+4) Acción
+${nextAction}`;
+  }
+
   try {
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -449,6 +500,7 @@ ${action}`;
     finalText = forceOffer(finalText, resolvedMode);
     finalText = forceCopywriter(finalText, resolvedMode, message);
     finalText = forceCmo(finalText, resolvedMode, message);
+    finalText = forcePm(finalText, resolvedMode, message);
 
     return res.status(200).json({
       reply: finalText,
