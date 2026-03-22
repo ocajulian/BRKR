@@ -58,40 +58,94 @@ export default async function handler(req, res) {
       .trim();
   }
 
-  function detectAutoMode({ message }) {
+  function detectAutoMode({ message, stage }) {
     const current = normalizeText(message);
 
-    if (current.includes("dm") || current.includes("copy") || current.includes("mensaje")) return "COPYWRITER";
+    if (
+      current.includes("dm") ||
+      current.includes("copy") ||
+      current.includes("mensaje") ||
+      current.includes("headline") ||
+      current.includes("cta")
+    ) {
+      return "COPYWRITER";
+    }
 
-    if (current.includes("cost") || current.includes("precio") || current.includes("cuanto cuesta")) return "CFO";
+    if (
+      current.includes("cost") ||
+      current.includes("coste") ||
+      current.includes("costes") ||
+      current.includes("precio") ||
+      current.includes("pricing") ||
+      current.includes("cuanto cuesta")
+    ) {
+      return "CFO";
+    }
+
+    if (
+      current.includes("oferta") ||
+      current.includes("offer") ||
+      current.includes("propuesta") ||
+      current.includes("promesa") ||
+      current.includes("que vendo") ||
+      current.includes("qué vendo") ||
+      current.includes("como vender") ||
+      current.includes("cómo vender")
+    ) {
+      return "OFERTA";
+    }
 
     if (
       current.includes("mvp") ||
       current.includes("build") ||
       current.includes("crear") ||
       current.includes("app") ||
+      current.includes("plataforma") ||
+      current.includes("software") ||
       current.includes("producto") ||
       current.includes("servicio")
     ) {
       return "CTO";
     }
 
-    // OFERTA trigger
     if (
-      current.includes("oferta") ||
-      current.includes("offer") ||
-      current.includes("vender") ||
-      current.includes("precio") ||
-      current.includes("cliente") ||
-      current.includes("propuesta")
+      current.includes("lead") ||
+      current.includes("lista") ||
+      current.includes("contactos") ||
+      current.includes("decisores")
     ) {
-      return "OFERTA";
+      return "SCRAPPING";
     }
 
-    if (current.includes("lead") || current.includes("lista")) return "SCRAPPING";
-    if (current.includes("plan") || current.includes("roadmap")) return "PM";
-    if (current.includes("explica") || current.includes("teach")) return "FORMACION";
-    if (current.includes("ads") || current.includes("campaign")) return "CMO";
+    if (
+      current.includes("plan") ||
+      current.includes("roadmap") ||
+      current.includes("timeline") ||
+      current.includes("entregables")
+    ) {
+      return "PM";
+    }
+
+    if (
+      current.includes("explica") ||
+      current.includes("teach") ||
+      current.includes("como funciona") ||
+      current.includes("cómo funciona")
+    ) {
+      return "FORMACION";
+    }
+
+    if (
+      stage === "ADS" ||
+      current.includes("ads") ||
+      current.includes("campaign") ||
+      current.includes("campana") ||
+      current.includes("campaña") ||
+      current.includes("trafico") ||
+      current.includes("tráfico")
+    ) {
+      return "CMO";
+    }
 
     return "CODIR";
   }
@@ -101,7 +155,7 @@ export default async function handler(req, res) {
 
   const resolvedMode =
     safeRequestedMode === "AUTO"
-      ? detectAutoMode({ message })
+      ? detectAutoMode({ message, stage: normalizedStage })
       : safeRequestedMode;
 
   const inputMessages = [
@@ -113,7 +167,6 @@ export default async function handler(req, res) {
     { role: "user", content: message },
   ];
 
-  // ===== CODIR =====
   function forceCodir(text, mode) {
     if (mode !== "CODIR") return text;
 
@@ -122,7 +175,6 @@ export default async function handler(req, res) {
 2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar si ese problema les importa.`;
   }
 
-  // ===== CFO =====
   function forceCfo(text, mode) {
     if (mode !== "CFO") return text;
 
@@ -142,7 +194,6 @@ export default async function handler(req, res) {
 ITERAR`;
   }
 
-  // ===== CTO =====
   function forceCto(text, mode) {
     if (mode !== "CTO") return text;
 
@@ -166,7 +217,6 @@ Que no haya interés real
 Define en una frase qué vendes y envíalo hoy a 3 potenciales clientes`;
   }
 
-  // ===== OFERTA =====
   function forceOferta(text, mode) {
     if (mode !== "OFERTA") return text;
 
@@ -177,16 +227,16 @@ Define un problema específico y urgente.
 Define un único tipo de cliente claro.
 
 3) Promesa
-Qué resultado concreto obtiene.
+Define un resultado concreto que ofreces.
 
 4) Precio
-Un único precio claro.
+Define un único precio claro.
 
 5) Canal
-Cómo lo vas a ofrecer (directo, sin ads complejos).
+Elige un canal directo para ofrecerlo.
 
 6) Acción
-Escribe el mensaje y envíalo hoy a 5 personas`;
+Escribe el mensaje y envíalo hoy a 5 personas.`;
   }
 
   try {
@@ -194,7 +244,7 @@ Escribe el mensaje y envíalo hoy a 5 personas`;
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: \`Bearer \${apiKey}\`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
@@ -219,7 +269,7 @@ Escribe el mensaje y envíalo hoy a 5 personas`;
             .flatMap((o) => o.content || [])
             .map((c) => c.text)
             .filter(Boolean)
-            .join("\\n")
+            .join("\n")
         : "") ||
       "No pude generar respuesta.";
 
