@@ -53,13 +53,13 @@ export default async function handler(req, res) {
     CFO:
       "MODO CFO: actúas como CFO. Modela el peor escenario realista para 30 días. Asume 0 ingresos. No expliques teoría. No uses placeholders. No inventes equipos grandes ni costes enterprise sin motivo. Da rangos razonables para un emprendedor solo o equipo pequeño. Siempre responde con: 1) supuestos, 2) coste MVP mínimo, 3) coste adquisición/test, 4) coste herramientas, 5) coste tiempo del fundador, 6) total 30 días, 7) decisión final obligatoria: elige SOLO una opción (GO, ITERAR o STOP).",
     CTO:
-      "MODO CTO: define el MVP mínimo para obtener señal real. Di qué construir, qué no construir, riesgos técnicos y stack mínimo. Evita sobreconstrucción. No propongas campañas, testimonios, encuestas ni extras de marketing.",
+      "MODO CTO: define el MVP mínimo para obtener señal real. Di qué construir, qué no construir, riesgos técnicos y stack mínimo. Evita sobreconstrucción. No propongas campañas, testimonios, encuestas, Ads ni extras de marketing. Responde con estructura breve: 1) objetivo del MVP, 2) qué construir ahora, 3) qué NO construir ahora, 4) riesgo principal, 5) siguiente acción.",
     CMO:
       "MODO CMO: elige foco de adquisición. Un canal principal, un objetivo medible y una métrica clara. Nada de marketing teatro.",
     SCRAPPING:
       "MODO SCRAPPING: construye listas sniper de decisores only. Usa criterios concretos, fuentes públicas y campos útiles para contacto.",
     COPYWRITER:
-      "MODO COPYWRITER: escribes para provocar respuesta real, no para sonar bien. Nunca escribes anuncios genéricos ni promesas vacías. Siempre escribes para validación, no para escalar. Tu objetivo es iniciar conversación o medir interés, no vender producto terminado.",
+      "MODO COPYWRITER: escribes para provocar respuesta real, no para sonar bien. Nunca escribes anuncios genéricos ni promesas vacías. Siempre escribes para validación, no para escalar. Tu objetivo es iniciar conversación o medir interés, no vender producto terminado. Responde con la pieza pedida y nada de explicación innecesaria.",
     PM:
       "MODO PM: organiza ejecución. Entregables, responsables, secuencia, deadline y siguiente acción.",
     FORMACION:
@@ -113,26 +113,27 @@ export default async function handler(req, res) {
       .trim();
   }
 
-  function textBundle(currentMessage, hist) {
-    const recentUserMessages = hist
-      .filter((m) => m.role === "user")
-      .slice(-4)
-      .map((m) => m.content)
-      .join("\n");
-
-    return normalizeText(`${recentUserMessages}\n${String(currentMessage || "")}`);
-  }
-
   function includesAny(text, terms) {
     return terms.some((t) => text.includes(t));
   }
 
-  function detectAutoMode({ stage, message, history }) {
-    const t = textBundle(message, history);
+  function scoreMatches(text, terms) {
+    return terms.reduce((acc, term) => acc + (text.includes(term) ? 1 : 0), 0);
+  }
 
-    const isOfferStage = stage === "OFERTA";
-    const isAdsStage = stage === "ADS";
-    const isValidationStage = stage === "VALIDACION";
+  function getRecentUserText(hist) {
+    return normalizeText(
+      hist
+        .filter((m) => m.role === "user")
+        .slice(-3)
+        .map((m) => m.content)
+        .join("\n")
+    );
+  }
+
+  function detectAutoMode({ stage, message, history }) {
+    const current = normalizeText(message);
+    const recentUserText = getRecentUserText(history);
 
     const cfoTerms = [
       "worst-case",
@@ -209,11 +210,9 @@ export default async function handler(req, res) {
       "schema",
       "supabase",
       "vercel",
-      "flow",
       "wireframe",
       "product scope",
       "build plan",
-      "roadmap tecnico",
       "construir",
       "desarrollar",
       "como construir",
@@ -227,15 +226,12 @@ export default async function handler(req, res) {
       "funcionalidad",
       "funcionalidades",
       "arquitectura",
-      "backend",
-      "frontend",
       "base de datos",
       "integracion",
       "integraciones",
       "estructura tecnica",
       "alcance tecnico",
       "que no construir",
-      "que hacemos primero",
       "prioridad tecnica",
     ];
 
@@ -321,9 +317,7 @@ export default async function handler(req, res) {
       "ensename",
       "como funciona",
       "que significa",
-      "aprendeme",
       "quiero entender",
-      "ensename",
     ];
 
     const cmoTerms = [
@@ -360,82 +354,56 @@ export default async function handler(req, res) {
       "tiktok ads",
     ];
 
-    const buildIntent =
-      includesAny(t, ctoTerms) ||
-      /(?:como|how)\s+(?:construir|hacer|build)/.test(t) ||
-      /que\s+(?:construyo|debo construir|no construir)/.test(t);
+    const currentBuildIntent =
+      includesAny(current, ctoTerms) ||
+      /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
+      /que\s+(?:construyo|debo construir|no construir)/.test(current);
 
-    const moneyIntent =
-      includesAny(t, cfoTerms) ||
-      /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(t);
+    const currentMoneyIntent =
+      includesAny(current, cfoTerms) ||
+      /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(current);
 
-    const copyIntent =
-      includesAny(t, copywriterTerms) &&
-      !buildIntent;
+    const currentCopyIntent =
+      includesAny(current, copywriterTerms) && !currentBuildIntent && !currentMoneyIntent;
 
-    const scrappingIntent = includesAny(t, scrappingTerms);
+    const currentScrappingIntent = includesAny(current, scrappingTerms);
 
-    const pmIntent = includesAny(t, pmTerms);
+    const currentPmIntent = includesAny(current, pmTerms);
 
-    const trainingIntent =
-      includesAny(t, trainingTerms) &&
-      !buildIntent &&
-      !moneyIntent &&
-      !copyIntent;
+    const currentTrainingIntent =
+      includesAny(current, trainingTerms) &&
+      !currentBuildIntent &&
+      !currentMoneyIntent &&
+      !currentCopyIntent;
 
-    const cmoIntent =
-      isAdsStage ||
-      (includesAny(t, cmoTerms) && !copyIntent);
+    const currentCmoIntent =
+      includesAny(current, cmoTerms) && !currentCopyIntent;
 
-    // PRIORIDAD 1 — CTO
-    // Si el usuario pide construir, definir MVP, stack o arquitectura,
-    // queremos evitar que se vaya a CODIR o CFO por palabras sueltas.
-    if (buildIntent) {
-      return "CTO";
-    }
+    // PRIORIDAD ABSOLUTA: el mensaje actual manda
+    if (currentCopyIntent) return "COPYWRITER";
+    if (currentMoneyIntent) return "CFO";
+    if (currentBuildIntent) return "CTO";
+    if (currentScrappingIntent) return "SCRAPPING";
+    if (currentPmIntent) return "PM";
+    if (currentTrainingIntent) return "FORMACION";
+    if (normalizedStage === "ADS" || currentCmoIntent) return "CMO";
 
-    // PRIORIDAD 2 — CFO
-    // Solo cuando el foco real es coste, precio, viabilidad o números.
-    if (moneyIntent) {
-      return "CFO";
-    }
+    // Fallback débil: usar historial solo si el mensaje actual es ambiguo
+    const weakScores = {
+      CFO: scoreMatches(recentUserText, cfoTerms),
+      CTO: scoreMatches(recentUserText, ctoTerms),
+      COPYWRITER: scoreMatches(recentUserText, copywriterTerms),
+      SCRAPPING: scoreMatches(recentUserText, scrappingTerms),
+      PM: scoreMatches(recentUserText, pmTerms),
+      FORMACION: scoreMatches(recentUserText, trainingTerms),
+      CMO: scoreMatches(recentUserText, cmoTerms),
+    };
 
-    // PRIORIDAD 3 — COPYWRITER
-    if (copyIntent) {
-      return "COPYWRITER";
-    }
+    const sortedWeakModes = Object.entries(weakScores).sort((a, b) => b[1] - a[1]);
+    const [bestWeakMode, bestWeakScore] = sortedWeakModes[0] || ["CODIR", 0];
 
-    // PRIORIDAD 4 — SCRAPPING
-    if (scrappingIntent) {
-      return "SCRAPPING";
-    }
-
-    // PRIORIDAD 5 — PM
-    if (pmIntent) {
-      return "PM";
-    }
-
-    // PRIORIDAD 6 — FORMACION
-    if (trainingIntent) {
-      return "FORMACION";
-    }
-
-    // PRIORIDAD 7 — CMO
-    if (cmoIntent) {
-      return "CMO";
-    }
-
-    // PRIORIDAD 8 — stage-sensitive fallback
-    if (isAdsStage) {
-      return "CMO";
-    }
-
-    if (isOfferStage) {
-      return "CODIR";
-    }
-
-    if (isValidationStage && moneyIntent) {
-      return "CFO";
+    if (bestWeakScore >= 2) {
+      return bestWeakMode;
     }
 
     return "CODIR";
