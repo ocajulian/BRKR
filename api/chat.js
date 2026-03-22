@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\p{L}\p{N}\s./:+-]/gu, " ")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -61,13 +61,38 @@ export default async function handler(req, res) {
   function detectAutoMode({ message }) {
     const current = normalizeText(message);
 
-    if (current.includes("dm") || current.includes("copy")) return "COPYWRITER";
-    if (current.includes("cost") || current.includes("precio")) return "CFO";
-    if (current.includes("mvp") || current.includes("build")) return "CTO";
-    if (current.includes("lead") || current.includes("lista")) return "SCRAPPING";
-    if (current.includes("plan") || current.includes("roadmap")) return "PM";
-    if (current.includes("explica") || current.includes("teach")) return "FORMACION";
-    if (current.includes("ads") || current.includes("campaign")) return "CMO";
+    // COPY
+    if (current.includes("dm") || current.includes("copy") || current.includes("mensaje")) return "COPYWRITER";
+
+    // CFO
+    if (current.includes("cost") || current.includes("precio") || current.includes("cuanto cuesta")) return "CFO";
+
+    // CTO (MEJORADO)
+    if (
+      current.includes("mvp") ||
+      current.includes("build") ||
+      current.includes("crear") ||
+      current.includes("crear una app") ||
+      current.includes("app") ||
+      current.includes("plataforma") ||
+      current.includes("software") ||
+      current.includes("servicio") ||
+      current.includes("producto")
+    ) {
+      return "CTO";
+    }
+
+    // SCRAPPING
+    if (current.includes("lead") || current.includes("lista") || current.includes("contactos")) return "SCRAPPING";
+
+    // PM
+    if (current.includes("plan") || current.includes("roadmap") || current.includes("timeline")) return "PM";
+
+    // FORMACION
+    if (current.includes("explica") || current.includes("teach") || current.includes("como funciona")) return "FORMACION";
+
+    // CMO
+    if (current.includes("ads") || current.includes("campaign") || current.includes("trafico")) return "CMO";
 
     return "CODIR";
   }
@@ -89,16 +114,16 @@ export default async function handler(req, res) {
     { role: "user", content: message },
   ];
 
-  // ===== CODIR (GENERALISTA) =====
+  // ===== CODIR =====
   function forceCodir(text, mode) {
     if (mode !== "CODIR") return text;
 
-    return `1) Decisión: vamos a asumir que estás resolviendo un problema concreto para un tipo de cliente específico. No vamos a seguir en abstracto.
+    return `1) Decisión: vamos a asumir que estás resolviendo un problema concreto para un tipo de cliente específico.
 
 2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar si ese problema les importa.`;
   }
 
-  // ===== CFO (GENERALISTA) =====
+  // ===== CFO =====
   function forceCfo(text, mode) {
     if (mode !== "CFO") return text;
 
@@ -106,12 +131,10 @@ export default async function handler(req, res) {
 - Estás validando una idea simple
 - Trabajas solo
 - No hay ingresos en 30 días
-- Objetivo: validar interés real
 
 2) Costes
 - Herramientas: 20–50€
 - Test adquisición: 100–200€
-- Otros: 0–50€
 
 3) Total 30 días
 → 120€ – 300€
@@ -120,7 +143,7 @@ export default async function handler(req, res) {
 ITERAR`;
   }
 
-  // ===== CTO (GENERALISTA) =====
+  // ===== CTO =====
   function forceCto(text, mode) {
     if (mode !== "CTO") return text;
 
@@ -130,16 +153,15 @@ Validar si alguien está dispuesto a pagar por la solución.
 2) Qué construir ahora
 - 1 versión mínima del producto
 - 1 forma simple de explicarlo
-- 1 mecanismo de pago o compromiso
+- 1 mecanismo de validación o pago
 
 3) Qué NO construir
 - funcionalidades extra
 - automatizaciones
 - branding complejo
-- múltiples versiones
 
 4) Riesgo principal
-Que no haya interés real → problema de demanda
+Que no haya interés real
 
 5) Acción
 Define en una frase qué vendes y envíalo hoy a 3 potenciales clientes`;
