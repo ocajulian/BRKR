@@ -109,6 +109,24 @@ export default async function handler(req, res) {
       "trafico",
     ]);
 
+    // FORMACION — va antes que COPYWRITER y CTO
+    if (
+      current.includes("explica") ||
+      current.includes("explícame") ||
+      current.includes("teach") ||
+      current.includes("como funciona") ||
+      current.includes("cómo funciona") ||
+      current.includes("que significa") ||
+      current.includes("qué significa") ||
+      current.includes("aprender") ||
+      current.includes("ensename") ||
+      current.includes("enséñame") ||
+      current.includes("definicion") ||
+      current.includes("definición")
+    ) {
+      return "FORMACION";
+    }
+
     // COPYWRITER
     if (
       current.includes("dm") ||
@@ -202,21 +220,6 @@ export default async function handler(req, res) {
       current.includes("servicio")
     ) {
       return "CTO";
-    }
-
-    // FORMACION
-    if (
-      current.includes("explica") ||
-      current.includes("teach") ||
-      current.includes("como funciona") ||
-      current.includes("cómo funciona") ||
-      current.includes("que significa") ||
-      current.includes("qué significa") ||
-      current.includes("aprender") ||
-      current.includes("ensename") ||
-      current.includes("enséñame")
-    ) {
-      return "FORMACION";
     }
 
     return "CODIR";
