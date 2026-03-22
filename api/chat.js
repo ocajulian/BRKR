@@ -58,8 +58,57 @@ export default async function handler(req, res) {
       .trim();
   }
 
+  function hasAny(text, terms) {
+    return terms.some((term) => text.includes(term));
+  }
+
+  function isNegated(text, terms) {
+    const openers = [
+      "sin",
+      "todavia no",
+      "todavia sin",
+      "no quiero",
+      "no usar",
+      "no meterme en",
+      "no entrar en",
+      "without",
+      "not yet",
+      "no "
+    ];
+
+    for (const term of terms) {
+      for (const opener of openers) {
+        const pattern = `${opener} ${term}`;
+        if (text.includes(pattern)) return true;
+      }
+    }
+
+    return false;
+  }
+
   function detectAutoMode({ message, stage }) {
     const current = normalizeText(message);
+
+    const cmoTerms = [
+      "canal",
+      "canales",
+      "adquisicion",
+      "audiencia",
+      "marketing",
+      "growth",
+      "trafico",
+      "campaign",
+      "campana",
+      "ads",
+    ];
+
+    const cmoNegated = isNegated(current, [
+      "ads",
+      "campaign",
+      "campana",
+      "marketing",
+      "trafico",
+    ]);
 
     // COPYWRITER
     if (
@@ -73,7 +122,7 @@ export default async function handler(req, res) {
       current.includes("hook") ||
       current.includes("reescribe") ||
       current.includes("escribeme") ||
-      current.includes("escríbeme")
+      current.includes("escribeme un")
     ) {
       return "COPYWRITER";
     }
@@ -86,9 +135,8 @@ export default async function handler(req, res) {
       current.includes("precio") ||
       current.includes("pricing") ||
       current.includes("cuanto cuesta") ||
-      current.includes("cuánto cuesta") ||
       current.includes("cuanto me costaria") ||
-      current.includes("cuánto me costaría")
+      current.includes("cuanto me costaría")
     ) {
       return "CFO";
     }
@@ -107,22 +155,13 @@ export default async function handler(req, res) {
       return "OFFER";
     }
 
-    // CMO — va antes que CTO
+    // CMO — solo si marketing/adquisición NO está negado
     if (
-      stage === "ADS" ||
-      current.includes("canal") ||
-      current.includes("canales") ||
-      current.includes("adquisicion") ||
-      current.includes("adquisición") ||
-      current.includes("audiencia") ||
-      current.includes("marketing") ||
-      current.includes("growth") ||
-      current.includes("trafico") ||
-      current.includes("tráfico") ||
-      current.includes("campaign") ||
-      current.includes("campana") ||
-      current.includes("campaña") ||
-      current.includes("ads")
+      !cmoNegated &&
+      (
+        stage === "ADS" ||
+        hasAny(current, cmoTerms)
+      )
     ) {
       return "CMO";
     }
