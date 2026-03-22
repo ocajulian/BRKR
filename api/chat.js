@@ -92,6 +92,7 @@ export default async function handler(req, res) {
       "canal",
       "canales",
       "adquisicion",
+      "adquisicion",
       "audiencia",
       "marketing",
       "growth",
@@ -109,7 +110,6 @@ export default async function handler(req, res) {
       "trafico",
     ]);
 
-    // COPYWRITER
     if (
       current.includes("dm") ||
       current.includes("copy") ||
@@ -126,7 +126,6 @@ export default async function handler(req, res) {
       return "COPYWRITER";
     }
 
-    // CFO
     if (
       current.includes("cost") ||
       current.includes("coste") ||
@@ -140,7 +139,6 @@ export default async function handler(req, res) {
       return "CFO";
     }
 
-    // OFFER
     if (
       current.includes("oferta") ||
       current.includes("offer") ||
@@ -154,7 +152,6 @@ export default async function handler(req, res) {
       return "OFFER";
     }
 
-    // SCRAPPING — antes que CMO
     if (
       current.includes("lead") ||
       current.includes("leads") ||
@@ -165,21 +162,15 @@ export default async function handler(req, res) {
       current.includes("decision maker") ||
       current.includes("prospectos") ||
       current.includes("prospects") ||
-      current.includes("linkedin") ||
       current.includes("base de datos de contactos")
     ) {
       return "SCRAPPING";
     }
 
-    // CMO
-    if (
-      !cmoNegated &&
-      (stage === "ADS" || hasAny(current, cmoTerms))
-    ) {
+    if (!cmoNegated && (stage === "ADS" || hasAny(current, cmoTerms))) {
       return "CMO";
     }
 
-    // PM
     if (
       current.includes("plan") ||
       current.includes("roadmap") ||
@@ -194,7 +185,6 @@ export default async function handler(req, res) {
       return "PM";
     }
 
-    // CTO
     if (
       current.includes("mvp") ||
       current.includes("build") ||
@@ -208,7 +198,6 @@ export default async function handler(req, res) {
       return "CTO";
     }
 
-    // FORMACION
     if (
       current.includes("explica") ||
       current.includes("teach") ||
@@ -385,7 +374,6 @@ CTA:
     } else if (
       current.includes("instagram") ||
       current.includes("tiktok") ||
-      current.includes("fitness") ||
       current.includes("consumer") ||
       current.includes("comunidad")
     ) {
@@ -423,17 +411,6 @@ ${action}`;
     const current = normalizeText(originalMessage);
 
     let weeklyGoal = "cerrar una validacion simple sin dispersarte";
-    let deliverables = [
-      "1 entregable principal cerrado",
-      "1 material de soporte minimo",
-      "1 test o envio real hecho",
-    ];
-    let executionOrder = [
-      "cerrar el entregable principal",
-      "preparar el soporte minimo",
-      "ejecutar el test o envio real",
-    ];
-    let nextAction = "define ahora el entregable unico que debe quedar cerrado esta semana";
 
     if (current.includes("esta semana") || current.includes("entregables")) {
       weeklyGoal = "terminar la semana con un output concreto y verificable";
@@ -443,83 +420,39 @@ ${action}`;
 ${weeklyGoal}
 
 2) Entregables
-- ${deliverables[0]}
-- ${deliverables[1]}
-- ${deliverables[2]}
+- 1 entregable principal cerrado
+- 1 material de soporte minimo
+- 1 test o envio real hecho
 
 3) Orden de ejecución
-- ${executionOrder[0]}
-- ${executionOrder[1]}
-- ${executionOrder[2]}
+- cerrar el entregable principal
+- preparar el soporte minimo
+- ejecutar el test o envio real
 
 4) Acción
-${nextAction}`;
+define ahora el entregable unico que debe quedar cerrado esta semana`;
   }
 
-  function forceScrapping(text, mode, originalMessage) {
+  function forceScrapping(text, mode) {
     if (mode !== "SCRAPPING") return text;
 
-    const current = normalizeText(originalMessage);
-
-    let targetProfile = "decisores del tipo de cliente mas cercano al problema que quieres validar";
-    let selectionCriteria = [
-      "empresa o proyecto dentro del nicho correcto",
-      "rol con capacidad real de decision",
-      "senales publicas de necesidad o contexto relevante",
-    ];
-    let fields = [
-      "nombre",
-      "empresa",
-      "cargo",
-      "linkedin o web",
-      "email o via de contacto",
-    ];
-    let nextAction = "define hoy un nicho concreto y prepara una lista inicial de 10 decisores reales";
-
-    if (
-      current.includes("clinica") ||
-      current.includes("clinica dental") ||
-      current.includes("clinicas") ||
-      current.includes("clinicas dentales")
-    ) {
-      targetProfile = "duenos, gerentes o responsables de crecimiento de clinicas dentales";
-      selectionCriteria = [
-        "clinicas activas en la ciudad o zona objetivo",
-        "cargo con poder de decision",
-        "presencia publica verificable en web o linkedin",
-      ];
-      nextAction = "elige una ciudad y prepara una lista inicial de 10 clinicas con un decisor verificable";
-    } else if (
-      current.includes("saas") ||
-      current.includes("software") ||
-      current.includes("b2b")
-    ) {
-      targetProfile = "fundadores, heads of growth o responsables comerciales de empresas B2B";
-      selectionCriteria = [
-        "empresa dentro del segmento correcto",
-        "rol con influencia directa sobre ventas o crecimiento",
-        "senal publica de que el problema es relevante",
-      ];
-      nextAction = "elige un segmento B2B concreto y crea una lista inicial de 10 empresas con decisor claro";
-    }
-
     return `1) Perfil objetivo
-${targetProfile}
+Define el tipo exacto de decisor o contacto que necesitas.
 
 2) Criterios de selección
-- ${selectionCriteria[0]}
-- ${selectionCriteria[1]}
-- ${selectionCriteria[2]}
+- empresa o proyecto dentro del nicho correcto
+- rol con capacidad real de decision
+- presencia publica verificable
 
 3) Campos a capturar
-- ${fields[0]}
-- ${fields[1]}
-- ${fields[2]}
-- ${fields[3]}
-- ${fields[4]}
+- nombre
+- empresa
+- cargo
+- linkedin o web
+- email o via de contacto
 
 4) Acción
-${nextAction}`;
+elige un nicho concreto y prepara una lista inicial de 10 contactos verificables`;
   }
 
   try {
@@ -563,7 +496,7 @@ ${nextAction}`;
     finalText = forceCopywriter(finalText, resolvedMode, message);
     finalText = forceCmo(finalText, resolvedMode, message);
     finalText = forcePm(finalText, resolvedMode, message);
-    finalText = forceScrapping(finalText, resolvedMode, message);
+    finalText = forceScrapping(finalText, resolvedMode);
 
     return res.status(200).json({
       reply: finalText,
