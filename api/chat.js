@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     return terms.some((t) => text.includes(t));
   }
 
-  function detectAutoMode({ stage, message }) {
+  function detectAutoMode({ message }) {
     const current = normalizeText(message);
 
     if (current.includes("dm") || current.includes("copy")) return "COPYWRITER";
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
 
   const resolvedMode =
     safeRequestedMode === "AUTO"
-      ? detectAutoMode({ stage: normalizedStage, message })
+      ? detectAutoMode({ message })
       : safeRequestedMode;
 
   const inputMessages = [
@@ -93,6 +93,7 @@ export default async function handler(req, res) {
     { role: "user", content: message },
   ];
 
+  // ===== CODIR FIX =====
   function forceCodirIfWeak(text, mode) {
     if (mode !== "CODIR") return text;
 
@@ -116,6 +117,42 @@ export default async function handler(req, res) {
     return `1) Decisión: vamos a asumir que estás resolviendo un problema de captación de clientes para un nicho específico. No vamos a definir más teoría.
 
 2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar interés.`;
+  }
+
+  // ===== CFO FIX =====
+  function forceCfoStructure(text, mode) {
+    if (mode !== "CFO") return text;
+
+    const lower = text.toLowerCase();
+
+    const hasDecision =
+      lower.includes("go") ||
+      lower.includes("iterar") ||
+      lower.includes("stop");
+
+    const hasSupuestos = lower.includes("supuesto");
+    const hasTotal = lower.includes("total");
+
+    const isWeak = !hasDecision || !hasSupuestos || !hasTotal;
+
+    if (!isWeak) return text;
+
+    return `1) Supuestos
+- Estás validando una idea simple en solitario
+- No hay ingresos durante 30 días
+- Uso de herramientas básicas
+
+2) Costes
+- Herramientas: 20–50€
+- Dominio / hosting: 10–20€
+- Test adquisición (mínimo): 100–200€
+- Tiempo del fundador: 0€
+
+3) Total 30 días
+→ 130€ – 270€
+
+4) Decisión
+ITERAR`;
   }
 
   try {
@@ -152,7 +189,8 @@ export default async function handler(req, res) {
         : "") ||
       "No pude generar respuesta.";
 
-    const finalText = forceCodirIfWeak(text, resolvedMode);
+    let finalText = forceCodirIfWeak(text, resolvedMode);
+    finalText = forceCfoStructure(finalText, resolvedMode);
 
     return res.status(200).json({
       reply: finalText,
