@@ -66,6 +66,18 @@ export default async function handler(req, res) {
       "MODO FORMACION: enseña solo lo mínimo necesario para ejecutar ahora. Explicación breve, ejemplo simple y tarea inmediata.",
   };
 
+  const validModes = new Set([
+    "AUTO",
+    "CODIR",
+    "CFO",
+    "CTO",
+    "CMO",
+    "SCRAPPING",
+    "COPYWRITER",
+    "PM",
+    "FORMACION",
+  ]);
+
   const languagePrompt =
     language === "es"
       ? "Responde en español."
@@ -91,15 +103,24 @@ export default async function handler(req, res) {
         }))
     : [];
 
+  function normalizeText(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\p{L}\p{N}\s./:+-]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function textBundle(currentMessage, hist) {
-    const recent = hist
+    const recentUserMessages = hist
       .filter((m) => m.role === "user")
       .slice(-4)
       .map((m) => m.content)
-      .join("\n")
-      .toLowerCase();
+      .join("\n");
 
-    return `${recent}\n${String(currentMessage || "").toLowerCase()}`;
+    return normalizeText(`${recentUserMessages}\n${String(currentMessage || "")}`);
   }
 
   function includesAny(text, terms) {
@@ -109,195 +130,328 @@ export default async function handler(req, res) {
   function detectAutoMode({ stage, message, history }) {
     const t = textBundle(message, history);
 
-    // PRIORIDAD 1 — CFO
-    if (
-      includesAny(t, [
-        "worst-case",
-        "worst case",
-        "estimate costs",
-        "validation costs",
-        "budget",
-        "runway",
-        "cashflow",
-        "margin",
-        "pricing",
-        "financial",
-        "coste",
-        "costes",
-        "costo",
-        "costos",
-        "presupuesto",
-        "peor escenario",
-        "estimación",
-        "estimacion",
-        "flujo de caja",
-        "margen",
-        "rentabilidad",
-        "viabilidad financiera",
-      ])
-    ) {
-      return "CFO";
-    }
+    const isOfferStage = stage === "OFERTA";
+    const isAdsStage = stage === "ADS";
+    const isValidationStage = stage === "VALIDACION";
 
-    // PRIORIDAD 2 — CTO
-    if (
-      includesAny(t, [
-        "mvp",
-        "minimum mvp",
-        "minimum viable product",
-        "define the minimum mvp",
-        "build this",
-        "what should i build",
-        "how should i build",
-        "stack",
-        "technical",
-        "software",
-        "feature",
-        "features",
-        "api",
-        "integration",
-        "construir",
-        "desarrollar",
-        "mvp mínimo",
-        "mvp minimo",
-        "qué construir",
-        "que construir",
-        "producto mínimo",
-        "producto minimo",
-        "stack",
-        "técnico",
-        "tecnico",
-        "funcionalidad",
-        "funcionalidades",
-      ])
-    ) {
+    const cfoTerms = [
+      "worst-case",
+      "worst case",
+      "estimate costs",
+      "validation costs",
+      "budget",
+      "runway",
+      "cashflow",
+      "cash flow",
+      "margin",
+      "pricing",
+      "financial",
+      "finance",
+      "revenue",
+      "income",
+      "profit",
+      "cost",
+      "costs",
+      "price",
+      "pricing model",
+      "unit economics",
+      "cac",
+      "ltv",
+      "burn",
+      "dinero",
+      "coste",
+      "costes",
+      "costo",
+      "costos",
+      "presupuesto",
+      "peor escenario",
+      "estimacion",
+      "flujo de caja",
+      "margen",
+      "rentabilidad",
+      "viabilidad financiera",
+      "ingresos",
+      "beneficio",
+      "beneficios",
+      "precio",
+      "precios",
+      "cuanto cobrar",
+      "cuanto cuesta",
+      "cuanto costaria",
+      "cuanto necesito",
+      "modelo de precios",
+      "economia unitaria",
+      "burn rate",
+      "runway financiero",
+    ];
+
+    const ctoTerms = [
+      "mvp",
+      "minimum viable product",
+      "minimum mvp",
+      "define the minimum mvp",
+      "build this",
+      "what should i build",
+      "how should i build",
+      "how to build",
+      "stack",
+      "technical",
+      "software",
+      "feature",
+      "features",
+      "api",
+      "integration",
+      "integrations",
+      "architecture",
+      "backend",
+      "frontend",
+      "database",
+      "schema",
+      "supabase",
+      "vercel",
+      "flow",
+      "wireframe",
+      "product scope",
+      "build plan",
+      "roadmap tecnico",
+      "construir",
+      "desarrollar",
+      "como construir",
+      "como lo construyo",
+      "como hacer el mvp",
+      "mvp minimo",
+      "que construir",
+      "producto minimo",
+      "tecnico",
+      "tecnica",
+      "funcionalidad",
+      "funcionalidades",
+      "arquitectura",
+      "backend",
+      "frontend",
+      "base de datos",
+      "integracion",
+      "integraciones",
+      "estructura tecnica",
+      "alcance tecnico",
+      "que no construir",
+      "que hacemos primero",
+      "prioridad tecnica",
+    ];
+
+    const copywriterTerms = [
+      "headline",
+      "cta",
+      "landing page",
+      "landing",
+      "write a headline",
+      "write copy",
+      "rewrite this",
+      "hook",
+      "ad copy",
+      "headline and cta",
+      "cold dm",
+      "cold email",
+      "sales message",
+      "outreach message",
+      "copy",
+      "titular",
+      "anuncio",
+      "escribe",
+      "reescribe",
+      "guion",
+      "texto",
+      "mensaje de venta",
+      "mensaje de prospeccion",
+      "dm",
+      "email de venta",
+      "email comercial",
+      "texto para vender",
+      "copy para landing",
+      "hook de anuncio",
+      "cta para landing",
+    ];
+
+    const scrappingTerms = [
+      "prospect list",
+      "lead list",
+      "decision makers",
+      "decision maker",
+      "linkedin list",
+      "prospects",
+      "lead generation list",
+      "prospectos",
+      "lista de prospectos",
+      "decisores",
+      "contactos",
+      "scrapping",
+      "scraping",
+      "lista de leads",
+      "lista de decisores",
+      "empresas objetivo",
+    ];
+
+    const pmTerms = [
+      "project plan",
+      "deliverables",
+      "deadline",
+      "timeline",
+      "roadmap",
+      "milestones",
+      "execution plan",
+      "task breakdown",
+      "entregables",
+      "cronograma",
+      "tareas",
+      "seguimiento",
+      "plan de proyecto",
+      "plan de ejecucion",
+      "secuencia de trabajo",
+      "prioridades del proyecto",
+      "hitos",
+    ];
+
+    const trainingTerms = [
+      "explain",
+      "teach",
+      "how does it work",
+      "what does this mean",
+      "what means",
+      "explicame",
+      "ensename",
+      "como funciona",
+      "que significa",
+      "aprendeme",
+      "quiero entender",
+      "ensename",
+    ];
+
+    const cmoTerms = [
+      "channel",
+      "channels",
+      "acquisition",
+      "campaign",
+      "campaigns",
+      "traffic",
+      "audience",
+      "growth",
+      "marketing channel",
+      "funnel",
+      "paid traffic",
+      "organic traffic",
+      "distribution",
+      "lead magnet",
+      "cold outreach",
+      "ads strategy",
+      "canal",
+      "canales",
+      "adquisicion",
+      "campana",
+      "campanas",
+      "trafico",
+      "audiencia",
+      "captacion",
+      "marketing",
+      "canal de adquisicion",
+      "estrategia de anuncios",
+      "meta ads",
+      "google ads",
+      "linkedin ads",
+      "tiktok ads",
+    ];
+
+    const buildIntent =
+      includesAny(t, ctoTerms) ||
+      /(?:como|how)\s+(?:construir|hacer|build)/.test(t) ||
+      /que\s+(?:construyo|debo construir|no construir)/.test(t);
+
+    const moneyIntent =
+      includesAny(t, cfoTerms) ||
+      /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(t);
+
+    const copyIntent =
+      includesAny(t, copywriterTerms) &&
+      !buildIntent;
+
+    const scrappingIntent = includesAny(t, scrappingTerms);
+
+    const pmIntent = includesAny(t, pmTerms);
+
+    const trainingIntent =
+      includesAny(t, trainingTerms) &&
+      !buildIntent &&
+      !moneyIntent &&
+      !copyIntent;
+
+    const cmoIntent =
+      isAdsStage ||
+      (includesAny(t, cmoTerms) && !copyIntent);
+
+    // PRIORIDAD 1 — CTO
+    // Si el usuario pide construir, definir MVP, stack o arquitectura,
+    // queremos evitar que se vaya a CODIR o CFO por palabras sueltas.
+    if (buildIntent) {
       return "CTO";
     }
 
+    // PRIORIDAD 2 — CFO
+    // Solo cuando el foco real es coste, precio, viabilidad o números.
+    if (moneyIntent) {
+      return "CFO";
+    }
+
     // PRIORIDAD 3 — COPYWRITER
-    if (
-      includesAny(t, [
-        "headline",
-        "cta",
-        "landing page",
-        "landing",
-        "write a headline",
-        "write copy",
-        "rewrite this",
-        "hook",
-        "ad copy",
-        "headline and cta",
-        "titular",
-        "anuncio",
-        "mensaje",
-        "escribe",
-        "reescribe",
-        "copy",
-        "guion",
-        "texto",
-      ])
-    ) {
+    if (copyIntent) {
       return "COPYWRITER";
     }
 
     // PRIORIDAD 4 — SCRAPPING
-    if (
-      includesAny(t, [
-        "prospect list",
-        "lead list",
-        "decision makers",
-        "decision maker",
-        "linkedin list",
-        "prospectos",
-        "lista de prospectos",
-        "decisores",
-        "contactos",
-        "scrapping",
-        "scraping",
-      ])
-    ) {
+    if (scrappingIntent) {
       return "SCRAPPING";
     }
 
     // PRIORIDAD 5 — PM
-    if (
-      includesAny(t, [
-        "project plan",
-        "deliverables",
-        "deadline",
-        "timeline",
-        "roadmap",
-        "entregables",
-        "cronograma",
-        "deadline",
-        "tareas",
-        "seguimiento",
-      ])
-    ) {
+    if (pmIntent) {
       return "PM";
     }
 
     // PRIORIDAD 6 — FORMACION
-    if (
-      includesAny(t, [
-        "explain",
-        "teach",
-        "how does it work",
-        "what does this mean",
-        "explícame",
-        "explicame",
-        "enséñame",
-        "enseñame",
-        "cómo funciona",
-        "como funciona",
-        "qué significa",
-        "que significa",
-      ])
-    ) {
+    if (trainingIntent) {
       return "FORMACION";
     }
 
     // PRIORIDAD 7 — CMO
-    if (
-      stage === "ADS" ||
-      includesAny(t, [
-        "channel",
-        "channels",
-        "acquisition",
-        "campaign",
-        "campaigns",
-        "traffic",
-        "audience",
-        "growth",
-        "marketing channel",
-        "canal",
-        "canales",
-        "adquisición",
-        "adquisicion",
-        "campaña",
-        "campañas",
-        "tráfico",
-        "trafico",
-        "audiencia",
-        "captación",
-        "captacion",
-      ])
-    ) {
+    if (cmoIntent) {
       return "CMO";
     }
 
-    // PRIORIDAD 8 — CODIR
+    // PRIORIDAD 8 — stage-sensitive fallback
+    if (isAdsStage) {
+      return "CMO";
+    }
+
+    if (isOfferStage) {
+      return "CODIR";
+    }
+
+    if (isValidationStage && moneyIntent) {
+      return "CFO";
+    }
+
     return "CODIR";
   }
 
+  const requestedMode = String(mode || "AUTO").toUpperCase();
+  const safeRequestedMode = validModes.has(requestedMode) ? requestedMode : "AUTO";
+
   const resolvedMode =
-    String(mode).toUpperCase() === "AUTO"
+    safeRequestedMode === "AUTO"
       ? detectAutoMode({
           stage: normalizedStage,
           message,
           history: sanitizedHistory,
         })
-      : String(mode).toUpperCase();
+      : safeRequestedMode;
 
   const inputMessages = [
     { role: "system", content: masterPrompt },
@@ -305,6 +459,7 @@ export default async function handler(req, res) {
     { role: "system", content: stagePrompts[normalizedStage] || stagePrompts.IDEA },
     { role: "system", content: modePrompts[resolvedMode] || modePrompts.CODIR },
     ...sanitizedHistory,
+    { role: "user", content: message },
   ];
 
   try {
@@ -346,7 +501,7 @@ export default async function handler(req, res) {
       meta: {
         stage_requested: normalizedStageInput,
         stage_used: normalizedStage,
-        mode_requested: String(mode).toUpperCase(),
+        mode_requested: safeRequestedMode,
         mode_used: resolvedMode,
         language_used: language,
       },
