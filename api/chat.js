@@ -117,6 +117,24 @@ export default async function handler(req, res) {
     return terms.some((t) => text.includes(t));
   }
 
+  function isNegated(text, terms) {
+    return terms.some((term) => {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      const patterns = [
+        new RegExp(`\\bsin\\s+[^.]{0,40}\\b${escaped}\\b`),
+        new RegExp(`\\bno\\s+quiero\\s+[^.]{0,40}\\b${escaped}\\b`),
+        new RegExp(`\\bno\\s+meterme\\s+[^.]{0,40}\\b${escaped}\\b`),
+        new RegExp(`\\bno\\s+entrar\\s+[^.]{0,40}\\b${escaped}\\b`),
+        new RegExp(`\\btodavia\\s+no\\s+[^.]{0,40}\\b${escaped}\\b`),
+        new RegExp(`\\bnot\\s+[^.]{0,40}\\b${escaped}\\b`),
+        new RegExp(`\\bwithout\\s+[^.]{0,40}\\b${escaped}\\b`),
+      ];
+
+      return patterns.some((rx) => rx.test(text));
+    });
+  }
+
   function detectAutoMode({ stage, message }) {
     const current = normalizeText(message);
 
@@ -205,6 +223,7 @@ export default async function handler(req, res) {
       "como hacer el mvp",
       "mvp minimo",
       "que construir",
+      "producto",
       "producto minimo",
       "tecnico",
       "tecnica",
@@ -322,6 +341,8 @@ export default async function handler(req, res) {
       "lead magnet",
       "cold outreach",
       "ads strategy",
+      "ads",
+      "anuncios",
       "canal",
       "canales",
       "adquisicion",
@@ -339,17 +360,61 @@ export default async function handler(req, res) {
       "tiktok ads",
     ];
 
+    const cfoNegated = isNegated(current, [
+      "coste",
+      "costes",
+      "costo",
+      "costos",
+      "precio",
+      "precios",
+      "dinero",
+      "budget",
+      "pricing",
+      "cost",
+      "costs",
+    ]);
+
+    const ctoNegated = isNegated(current, [
+      "producto",
+      "mvp",
+      "construir",
+      "build",
+      "stack",
+      "technical",
+      "tecnico",
+      "api",
+      "arquitectura",
+    ]);
+
+    const cmoNegated = isNegated(current, [
+      "ads",
+      "anuncios",
+      "marketing",
+      "campaign",
+      "campaigns",
+      "trafico",
+      "adquisicion",
+      "canal",
+      "canales",
+    ]);
+
     const currentCopyIntent =
       includesAny(current, copywriterTerms);
 
     const currentMoneyIntent =
-      includesAny(current, cfoTerms) ||
-      /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(current);
+      !cfoNegated &&
+      (
+        includesAny(current, cfoTerms) ||
+        /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(current)
+      );
 
     const currentBuildIntent =
-      includesAny(current, ctoTerms) ||
-      /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
-      /que\s+(?:construyo|debo construir|no construir)/.test(current);
+      !ctoNegated &&
+      (
+        includesAny(current, ctoTerms) ||
+        /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
+        /que\s+(?:construyo|debo construir|no construir)/.test(current)
+      );
 
     const currentScrappingIntent =
       includesAny(current, scrappingTerms);
@@ -364,19 +429,18 @@ export default async function handler(req, res) {
       !currentCopyIntent;
 
     const currentCmoIntent =
+      !cmoNegated &&
       includesAny(current, cmoTerms) &&
       !currentCopyIntent;
 
-    // El mensaje actual manda. Sin arrastre de historial.
     if (currentCopyIntent) return "COPYWRITER";
     if (currentMoneyIntent) return "CFO";
     if (currentBuildIntent) return "CTO";
     if (currentScrappingIntent) return "SCRAPPING";
     if (currentPmIntent) return "PM";
     if (currentTrainingIntent) return "FORMACION";
-    if (stage === "ADS" || currentCmoIntent) return "CMO";
+    if ((stage === "ADS" && !cmoNegated) || currentCmoIntent) return "CMO";
 
-    // Fallback oficial BRKR
     return "CODIR";
   }
 
