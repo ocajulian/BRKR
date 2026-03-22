@@ -69,7 +69,6 @@ export default async function handler(req, res) {
       "no quiero",
       "no meterme en",
       "no entrar en",
-      "no entrar todavia en",
       "sin meterme en",
       "without",
       "not yet",
@@ -98,307 +97,27 @@ export default async function handler(req, res) {
   function detectAutoMode({ stage, message }) {
     const current = normalizeText(message);
 
-    const cfoTerms = [
-      "worst-case",
-      "worst case",
-      "estimate costs",
-      "validation costs",
-      "budget",
-      "runway",
-      "cashflow",
-      "cash flow",
-      "margin",
-      "pricing",
-      "financial",
-      "finance",
-      "revenue",
-      "income",
-      "profit",
-      "cost",
-      "costs",
-      "price",
-      "pricing model",
-      "unit economics",
-      "cac",
-      "ltv",
-      "burn",
-      "dinero",
-      "coste",
-      "costes",
-      "costo",
-      "costos",
-      "presupuesto",
-      "peor escenario",
-      "estimacion",
-      "flujo de caja",
-      "margen",
-      "rentabilidad",
-      "viabilidad financiera",
-      "ingresos",
-      "beneficio",
-      "beneficios",
-      "precio",
-      "precios",
-      "cuanto cobrar",
-      "cuanto cuesta",
-      "cuanto costaria",
-      "cuanto necesito",
-      "modelo de precios",
-      "economia unitaria",
-      "burn rate",
-      "runway financiero",
-    ];
-
-    const ctoTerms = [
-      "mvp",
-      "minimum viable product",
-      "minimum mvp",
-      "define the minimum mvp",
-      "build this",
-      "what should i build",
-      "how should i build",
-      "how to build",
-      "stack",
-      "technical",
-      "software",
-      "feature",
-      "features",
-      "api",
-      "integration",
-      "integrations",
-      "architecture",
-      "backend",
-      "frontend",
-      "database",
-      "schema",
-      "supabase",
-      "vercel",
-      "wireframe",
-      "product scope",
-      "build plan",
-      "construir",
-      "desarrollar",
-      "como construir",
-      "como lo construyo",
-      "como hacer el mvp",
-      "mvp minimo",
-      "que construir",
-      "producto",
-      "producto minimo",
-      "tecnico",
-      "tecnica",
-      "funcionalidad",
-      "funcionalidades",
-      "arquitectura",
-      "base de datos",
-      "integracion",
-      "integraciones",
-      "estructura tecnica",
-      "alcance tecnico",
-      "que no construir",
-      "prioridad tecnica",
-    ];
-
-    const copywriterTerms = [
-      "headline",
-      "cta",
-      "landing page",
-      "landing",
-      "write a headline",
-      "write copy",
-      "rewrite this",
-      "hook",
-      "ad copy",
-      "headline and cta",
-      "cold dm",
-      "cold email",
-      "sales message",
-      "outreach message",
-      "copy",
-      "titular",
-      "anuncio",
-      "escribe",
-      "reescribe",
-      "guion",
-      "texto",
-      "mensaje de venta",
-      "mensaje de prospeccion",
-      "dm",
-      "email de venta",
-      "email comercial",
-      "texto para vender",
-      "copy para landing",
-      "hook de anuncio",
-      "cta para landing",
-    ];
-
-    const scrappingTerms = [
-      "prospect list",
-      "lead list",
-      "decision makers",
-      "decision maker",
-      "linkedin list",
-      "prospects",
-      "lead generation list",
-      "prospectos",
-      "lista de prospectos",
-      "decisores",
-      "contactos",
-      "scrapping",
-      "scraping",
-      "lista de leads",
-      "lista de decisores",
-      "empresas objetivo",
-    ];
-
-    const pmTerms = [
-      "project plan",
-      "deliverables",
-      "deadline",
-      "timeline",
-      "roadmap",
-      "milestones",
-      "execution plan",
-      "task breakdown",
-      "entregables",
-      "cronograma",
-      "tareas",
-      "seguimiento",
-      "plan de proyecto",
-      "plan de ejecucion",
-      "secuencia de trabajo",
-      "prioridades del proyecto",
-      "hitos",
-    ];
-
-    const trainingTerms = [
-      "explain",
-      "teach",
-      "how does it work",
-      "what does this mean",
-      "what means",
-      "explicame",
-      "ensename",
-      "como funciona",
-      "que significa",
-      "quiero entender",
-    ];
-
-    const cmoTerms = [
-      "channel",
-      "channels",
-      "acquisition",
-      "campaign",
-      "campaigns",
-      "traffic",
-      "audience",
-      "growth",
-      "marketing channel",
-      "funnel",
-      "paid traffic",
-      "organic traffic",
-      "distribution",
-      "lead magnet",
-      "cold outreach",
-      "ads strategy",
-      "ads",
-      "anuncios",
-      "canal",
-      "canales",
-      "adquisicion",
-      "campana",
-      "campanas",
-      "trafico",
-      "audiencia",
-      "captacion",
-      "marketing",
-      "canal de adquisicion",
-      "estrategia de anuncios",
-      "meta ads",
-      "google ads",
-      "linkedin ads",
-      "tiktok ads",
-    ];
+    const cfoTerms = ["cost", "precio", "pricing", "budget"];
+    const ctoTerms = ["mvp", "build", "construir", "stack"];
+    const copywriterTerms = ["dm", "copy", "mensaje", "headline"];
+    const scrappingTerms = ["lista", "leads", "decisores"];
+    const pmTerms = ["plan", "timeline", "roadmap"];
+    const trainingTerms = ["explica", "teach", "como funciona"];
+    const cmoTerms = ["ads", "campaña", "trafico"];
 
     const blockedDomains = detectBlockedDomains(current, {
-      CFO: [
-        "pricing",
-        "price",
-        "precio",
-        "precios",
-        "cost",
-        "costs",
-        "coste",
-        "costes",
-        "costo",
-        "costos",
-        "dinero",
-        "budget",
-      ],
-      CTO: [
-        "producto",
-        "mvp",
-        "construir",
-        "build",
-        "stack",
-        "api",
-        "arquitectura",
-        "technical",
-        "tecnico",
-      ],
-      CMO: [
-        "ads",
-        "anuncios",
-        "marketing",
-        "campaign",
-        "campaigns",
-        "campana",
-        "campanas",
-        "trafico",
-        "adquisicion",
-        "canal",
-        "canales",
-      ],
+      CFO: ["cost", "precio", "pricing"],
+      CTO: ["mvp", "build", "producto"],
+      CMO: ["ads", "campaña"],
     });
 
-    const currentCopyIntent = includesAny(current, copywriterTerms);
-
-    const currentMoneyIntent =
-      !blockedDomains.has("CFO") &&
-      (
-        includesAny(current, cfoTerms) ||
-        /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(current)
-      );
-
-    const currentBuildIntent =
-      !blockedDomains.has("CTO") &&
-      (
-        includesAny(current, ctoTerms) ||
-        /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
-        /que\s+(?:construyo|debo construir|no construir)/.test(current)
-      );
-
-    const currentScrappingIntent = includesAny(current, scrappingTerms);
-    const currentPmIntent = includesAny(current, pmTerms);
-
-    const currentTrainingIntent =
-      includesAny(current, trainingTerms) &&
-      !currentBuildIntent &&
-      !currentMoneyIntent &&
-      !currentCopyIntent;
-
-    const currentCmoIntent =
-      !blockedDomains.has("CMO") &&
-      includesAny(current, cmoTerms) &&
-      !currentCopyIntent;
-
-    if (currentCopyIntent) return "COPYWRITER";
-    if (currentMoneyIntent) return "CFO";
-    if (currentBuildIntent) return "CTO";
-    if (currentScrappingIntent) return "SCRAPPING";
-    if (currentPmIntent) return "PM";
-    if (currentTrainingIntent) return "FORMACION";
-    if ((stage === "ADS" && !blockedDomains.has("CMO")) || currentCmoIntent) return "CMO";
+    if (includesAny(current, copywriterTerms)) return "COPYWRITER";
+    if (!blockedDomains.has("CFO") && includesAny(current, cfoTerms)) return "CFO";
+    if (!blockedDomains.has("CTO") && includesAny(current, ctoTerms)) return "CTO";
+    if (includesAny(current, scrappingTerms)) return "SCRAPPING";
+    if (includesAny(current, pmTerms)) return "PM";
+    if (includesAny(current, trainingTerms)) return "FORMACION";
+    if (!blockedDomains.has("CMO") && includesAny(current, cmoTerms)) return "CMO";
 
     return "CODIR";
   }
@@ -417,8 +136,8 @@ export default async function handler(req, res) {
   const inputMessages = [
     { role: "system", content: MASTER_PROMPT },
     { role: "system", content: getLanguagePrompt(language) },
-    { role: "system", content: STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA },
     { role: "system", content: MODE_PROMPTS[resolvedMode] || MODE_PROMPTS.CODIR },
+    { role: "system", content: STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA },
     ...sanitizedHistory,
     { role: "user", content: message },
   ];
