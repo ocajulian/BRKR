@@ -8,37 +8,37 @@
 
     <style>
       :root {
-        --bg: #f5f6f8;
-        --panel: #ffffff;
-        --panel-soft: #fafafa;
-        --border: #e5e7eb;
-        --text: #111827;
-        --muted: #6b7280;
-        --accent: #111827;
-        --accent-text: #ffffff;
-        --bubble-user: #111827;
-        --bubble-user-text: #ffffff;
-        --bubble-assistant: #ffffff;
-        --bubble-assistant-text: #111827;
-        --input-bg: #f9fafb;
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        --bg: #0b0f14;
+        --panel: #12171d;
+        --panel-soft: #0f141a;
+        --border: #1f2730;
+        --text: #e6edf3;
+        --muted: #7d8b99;
+        --accent: #00e0ff;
+        --accent-text: #001418;
+        --bubble-user: #00e0ff;
+        --bubble-user-text: #001418;
+        --bubble-assistant: #151b22;
+        --bubble-assistant-text: #e6edf3;
+        --input-bg: #0b0f14;
+        --shadow: 0 4px 20px rgba(0, 224, 255, 0.08);
       }
 
       body.theme-dark {
-        --bg: #111315;
-        --panel: #17191c;
-        --panel-soft: #141619;
-        --border: #262a30;
-        --text: #f3f4f6;
-        --muted: #9ca3af;
-        --accent: #f3f4f6;
-        --accent-text: #111315;
-        --bubble-user: #f3f4f6;
-        --bubble-user-text: #111315;
-        --bubble-assistant: #1b1f24;
-        --bubble-assistant-text: #f3f4f6;
-        --input-bg: #111315;
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+        --bg: #0b0f14;
+        --panel: #12171d;
+        --panel-soft: #0f141a;
+        --border: #1f2730;
+        --text: #e6edf3;
+        --muted: #7d8b99;
+        --accent: #00e0ff;
+        --accent-text: #001418;
+        --bubble-user: #00e0ff;
+        --bubble-user-text: #001418;
+        --bubble-assistant: #151b22;
+        --bubble-assistant-text: #e6edf3;
+        --input-bg: #0b0f14;
+        --shadow: 0 4px 20px rgba(0, 224, 255, 0.08);
       }
 
       * { box-sizing: border-box; }
@@ -51,58 +51,289 @@
       }
       button, input, textarea, select { font: inherit; }
 
-      .app-shell { height: 100vh; display: flex; background: var(--bg); color: var(--text); }
-      .sidebar { width: 280px; border-right: 1px solid var(--border); background: var(--panel); display: none; flex-direction: column; }
+      .app-shell {
+        height: 100vh;
+        display: flex;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .sidebar {
+        width: 280px;
+        border-right: 1px solid var(--border);
+        background: var(--panel);
+        display: none;
+        flex-direction: column;
+      }
+
       .sidebar-header, .sidebar-footer, .topbar { background: var(--panel); }
-      .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
-      .brand-title { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
-      .brand-subtitle, .muted { color: var(--muted); }
-      .sidebar-list { flex: 1; overflow-y: auto; padding: 10px; }
-      .chat-item { padding: 12px; margin-bottom: 8px; border-radius: 14px; cursor: pointer; border: 1px solid var(--border); background: var(--panel); transition: 0.15s ease; }
-      .chat-item.active { border-color: var(--accent); background: var(--panel-soft); }
-      .sidebar-footer { padding: 14px; border-top: 1px solid var(--border); }
-      .user-box { margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-soft); }
-      .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-      .screen { display: none; flex: 1; }
-      .center-screen { align-items: center; justify-content: center; padding: 24px; }
-      .card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 32px; width: 100%; max-width: 520px; box-shadow: var(--shadow); }
-      .auth-card { max-width: 460px; }
-      .topbar { padding: 18px 20px; border-bottom: 1px solid var(--border); }
-      .topbar-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-      .chat-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
-      .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
-      .controls-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
-      .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-      .select, .text-input, .text-area, .btn { border-radius: 14px; border: 1px solid var(--border); }
-      .select, .text-input { padding: 10px 12px; background: var(--panel); color: var(--text); }
-      .text-area { width: 100%; resize: none; padding: 16px 18px; font-size: 16px; line-height: 1.6; background: var(--input-bg); color: var(--text); outline: none; }
-      .btn { padding: 10px 12px; background: var(--panel); color: var(--text); cursor: pointer; }
-      .btn-primary { border: none; background: var(--accent); color: var(--accent-text); font-weight: 600; }
-      .btn-full { width: 100%; }
-      .messages { flex: 1; overflow-y: auto; padding: 24px 24px 120px 24px; display: flex; flex-direction: column; gap: 18px; }
-      .bubble-row { display: flex; }
-      .bubble-row.user { justify-content: flex-end; }
-      .bubble-row.assistant { justify-content: flex-start; }
-      .bubble { max-width: 720px; padding: 14px 16px; border-radius: 18px; box-shadow: var(--shadow); line-height: 1.55; }
-      .bubble.user { background: var(--bubble-user); color: var(--bubble-user-text); }
-      .bubble.assistant { background: var(--bubble-assistant); color: var(--bubble-assistant-text); border: 1px solid var(--border); }
-      .bubble-label { font-size: 12px; margin-bottom: 6px; opacity: 0.65; font-weight: 500; }
-      .bubble-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
-      .composer { border-top: 1px solid var(--border); background: var(--panel); padding: 16px 20px 20px 20px; }
-      .composer-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 12px; }
-      .status { font-size: 12px; color: var(--muted); }
-      .theme-switch { display: flex; gap: 8px; }
-      .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .small { font-size: 13px; }
+
+      .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .brand-title {
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+
+      .brand-subtitle, .muted {
+        color: var(--muted);
+      }
+
+      .sidebar-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      .chat-item {
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 14px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        transition: 0.15s ease;
+      }
+
+      .chat-item.active {
+        border-color: var(--accent);
+        background: var(--panel-soft);
+        box-shadow: 0 0 10px rgba(0, 224, 255, 0.16);
+      }
+
+      .sidebar-footer {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      .user-box {
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel-soft);
+      }
+
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .screen {
+        display: none;
+        flex: 1;
+      }
+
+      .center-screen {
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: var(--shadow);
+      }
+
+      .auth-card {
+        max-width: 460px;
+      }
+
+      .topbar {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .topbar-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .chat-title {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .controls-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+
+      .field label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .select, .text-input, .text-area, .btn {
+        border-radius: 14px;
+        border: 1px solid var(--border);
+      }
+
+      .select, .text-input {
+        padding: 10px 12px;
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      .text-area {
+        width: 100%;
+        resize: none;
+        padding: 16px 18px;
+        font-size: 16px;
+        line-height: 1.6;
+        background: var(--input-bg);
+        color: var(--text);
+        outline: none;
+      }
+
+      .btn {
+        padding: 10px 12px;
+        background: var(--panel);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        border: none;
+        background: var(--accent);
+        color: var(--accent-text);
+        font-weight: 700;
+        box-shadow: 0 0 0 0 rgba(0, 224, 255, 0.6);
+        transition: all 0.15s ease;
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 0 12px rgba(0, 224, 255, 0.6);
+        transform: translateY(-1px);
+      }
+
+      .btn-full {
+        width: 100%;
+      }
+
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 24px 120px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .bubble-row {
+        display: flex;
+      }
+
+      .bubble-row.user {
+        justify-content: flex-end;
+      }
+
+      .bubble-row.assistant {
+        justify-content: flex-start;
+      }
+
+      .bubble {
+        max-width: 720px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        line-height: 1.55;
+      }
+
+      .bubble.user {
+        background: var(--bubble-user);
+        color: var(--bubble-user-text);
+        border: none;
+        font-weight: 600;
+      }
+
+      .bubble.assistant {
+        background: var(--bubble-assistant);
+        color: var(--bubble-assistant-text);
+        border: 1px solid var(--border);
+      }
+
+      .bubble-label {
+        font-size: 12px;
+        margin-bottom: 6px;
+        opacity: 0.7;
+        font-weight: 600;
+      }
+
+      .bubble-meta {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed var(--border);
+      }
+
+      .composer {
+        border-top: 1px solid var(--border);
+        background: var(--panel);
+        padding: 16px 20px 20px 20px;
+      }
+
+      .composer-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        gap: 12px;
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .theme-switch {
+        display: flex;
+        gap: 8px;
+      }
+
+      .lang-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .small {
+        font-size: 13px;
+      }
     </style>
   </head>
 
-  <body class="theme-light">
+  <body class="theme-dark">
     <div class="app-shell">
       <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
           <div class="brand-title">BRKR</div>
-          <div class="brand-subtitle small" style="margin-top:6px;">Cloud multi-chat</div>
+          <div class="brand-subtitle small" style="margin-top:6px;">Decision engine</div>
           <button onclick="createNewChat()" class="btn btn-primary btn-full" style="margin-top:14px; padding:12px 14px;">
             New chat
           </button>
@@ -170,7 +401,7 @@
             <div class="topbar-row">
               <div>
                 <div id="chatTitle" class="chat-title">BRKR</div>
-                <div id="topHint" class="muted small" style="margin-top:6px;">Business decision engine.</div>
+                <div id="topHint" class="muted small" style="margin-top:6px;">Decision engine.</div>
               </div>
 
               <div class="toolbar">
@@ -263,14 +494,14 @@
       }
 
       function setTheme(theme) {
-        const finalTheme = theme === "dark" ? "dark" : "light";
+        const finalTheme = theme === "light" ? "light" : "dark";
         bodyEl.classList.remove("theme-light", "theme-dark");
-        bodyEl.classList.add(finalTheme === "dark" ? "theme-dark" : "theme-light");
+        bodyEl.classList.add(finalTheme === "light" ? "theme-light" : "theme-dark");
         localStorage.setItem(STORAGE_KEYS.theme, finalTheme);
       }
 
       function initTheme() {
-        const saved = localStorage.getItem(STORAGE_KEYS.theme) || "light";
+        const saved = localStorage.getItem(STORAGE_KEYS.theme) || "dark";
         setTheme(saved);
       }
 
@@ -665,22 +896,22 @@
       function applyLanguageUI() {
         const lang = getLanguage();
         if (lang === "es") {
-          topHintEl.textContent = "Motor de decisión business.";
+          topHintEl.textContent = "Motor de decisión.";
           statusEl.textContent = "Listo.";
           inputEl.placeholder = "Escribe aquí...";
           sendBtn.textContent = "Enviar";
         } else if (lang === "fr") {
-          topHintEl.textContent = "Moteur de décision business.";
+          topHintEl.textContent = "Moteur de décision.";
           statusEl.textContent = "Prêt.";
           inputEl.placeholder = "Écrivez ici...";
           sendBtn.textContent = "Envoyer";
         } else if (lang === "other") {
-          topHintEl.textContent = "Business decision engine.";
+          topHintEl.textContent = "Decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write in your language...";
           sendBtn.textContent = "Send";
         } else {
-          topHintEl.textContent = "Business decision engine.";
+          topHintEl.textContent = "Decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write here...";
           sendBtn.textContent = "Send";
