@@ -3,10 +3,14 @@ import {
   STAGE_ALIASES,
   STAGE_PROMPTS,
   MODE_PROMPTS,
+  ONBOARDING_PROMPTS,
   VALID_MODES,
   getLanguagePrompt,
 } from "../lib/brkr-prompts.js";
-import { detectAutoMode } from "../lib/brkr-mode-detection.js";
+import {
+  detectAutoMode,
+  detectOnboardingState,
+} from "../lib/brkr-mode-detection.js";
 import { applyModeEnforcement } from "../lib/brkr-mode-enforcement.js";
 
 export default async function handler(req, res) {
@@ -60,9 +64,24 @@ export default async function handler(req, res) {
       ? detectAutoMode({ message, stage: normalizedStage })
       : safeRequestedMode;
 
+  const onboardingState = detectOnboardingState({
+    message,
+    history: sanitizedHistory,
+  });
+
   const inputMessages = [
     { role: "system", content: MASTER_PROMPT },
     { role: "system", content: getLanguagePrompt(language) },
+    ...(onboardingState
+      ? [
+          {
+            role: "system",
+            content:
+              ONBOARDING_PROMPTS[onboardingState] ||
+              ONBOARDING_PROMPTS.WELCOME,
+          },
+        ]
+      : []),
     {
       role: "system",
       content: MODE_PROMPTS[resolvedMode] || MODE_PROMPTS.CODIR,
@@ -85,8 +104,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         input: inputMessages,
-        temperature: 0.25,
-        max_output_tokens: 1200,
+        temperature: onboardingState ? 0.2 : 0.25,
+        max_output_tokens: onboardingState ? 450 : 1200,
       }),
     });
 
@@ -109,7 +128,9 @@ export default async function handler(req, res) {
         : "") ||
       "No pude generar respuesta.";
 
-    const finalText = applyModeEnforcement(text, resolvedMode, message);
+    const finalText = onboardingState
+      ? text
+      : applyModeEnforcement(text, resolvedMode, message);
 
     return res.status(200).json({
       reply: finalText,
@@ -119,6 +140,7 @@ export default async function handler(req, res) {
         mode_requested: safeRequestedMode,
         mode_used: resolvedMode,
         language_used: language,
+        onboarding_state: onboardingState || null,
       },
     });
   } catch (e) {
