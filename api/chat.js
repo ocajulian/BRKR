@@ -58,10 +58,6 @@ export default async function handler(req, res) {
       .trim();
   }
 
-  function includesAny(text, terms) {
-    return terms.some((t) => text.includes(t));
-  }
-
   function detectAutoMode({ message }) {
     const current = normalizeText(message);
 
@@ -94,62 +90,31 @@ export default async function handler(req, res) {
   ];
 
   // ===== CODIR FIX =====
-  function forceCodirIfWeak(text, mode) {
+  function forceCodir(text, mode) {
     if (mode !== "CODIR") return text;
 
-    const lower = text.toLowerCase();
-
-    const weakPatterns = [
-      "define el problema",
-      "define problema",
-      "falta de claridad",
-      "no está claro",
-      "describe el problema",
-      "identifica el problema",
-      "quién es tu cliente",
-      "define tu cliente",
-    ];
-
-    const isWeak = weakPatterns.some((p) => lower.includes(p));
-
-    if (!isWeak) return text;
-
-    return `1) Decisión: vamos a asumir que estás resolviendo un problema de captación de clientes para un nicho específico. No vamos a definir más teoría.
+    return `1) Decisión: vamos a asumir que estás resolviendo un problema de captación de clientes para un nicho específico.
 
 2) Acción: escribe ahora un mensaje corto para contactar a 3 potenciales clientes y validar interés.`;
   }
 
-  // ===== CFO FIX =====
-  function forceCfoStructure(text, mode) {
+  // ===== CFO FIX (SIEMPRE FORZADO) =====
+  function forceCfo(text, mode) {
     if (mode !== "CFO") return text;
 
-    const lower = text.toLowerCase();
-
-    const hasDecision =
-      lower.includes("go") ||
-      lower.includes("iterar") ||
-      lower.includes("stop");
-
-    const hasSupuestos = lower.includes("supuesto");
-    const hasTotal = lower.includes("total");
-
-    const isWeak = !hasDecision || !hasSupuestos || !hasTotal;
-
-    if (!isWeak) return text;
-
     return `1) Supuestos
-- Estás validando una idea simple en solitario
-- No hay ingresos durante 30 días
-- Uso de herramientas básicas
+- Estás validando un e-book simple como producto
+- Trabajas solo
+- Objetivo: validar interés real, no escalar
 
 2) Costes
+- Creación contenido: 0€ (lo haces tú)
 - Herramientas: 20–50€
-- Dominio / hosting: 10–20€
 - Test adquisición (mínimo): 100–200€
-- Tiempo del fundador: 0€
+- Otros: 0–50€
 
 3) Total 30 días
-→ 130€ – 270€
+→ 120€ – 300€
 
 4) Decisión
 ITERAR`;
@@ -189,8 +154,8 @@ ITERAR`;
         : "") ||
       "No pude generar respuesta.";
 
-    let finalText = forceCodirIfWeak(text, resolvedMode);
-    finalText = forceCfoStructure(finalText, resolvedMode);
+    let finalText = forceCodir(text, resolvedMode);
+    finalText = forceCfo(finalText, resolvedMode);
 
     return res.status(200).json({
       reply: finalText,
