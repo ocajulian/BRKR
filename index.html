@@ -259,8 +259,12 @@
           box-shadow 0.15s ease;
       }
 
-      .btn:hover {
+      .btn:hover,
+      .btn:focus-visible {
         background: var(--panel-soft);
+        color: var(--text);
+        border-color: var(--border);
+        outline: none;
       }
 
       .btn-primary {
@@ -271,12 +275,22 @@
         box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
       }
 
-      body.theme-dark .btn-primary:hover {
+      .btn-primary:hover,
+      .btn-primary:focus-visible {
+        background: var(--accent);
+        color: var(--accent-text);
+        border-color: transparent;
+        outline: none;
+      }
+
+      body.theme-dark .btn-primary:hover,
+      body.theme-dark .btn-primary:focus-visible {
         box-shadow: var(--glow);
         transform: translateY(-1px);
       }
 
-      body.theme-light .btn-primary:hover {
+      body.theme-light .btn-primary:hover,
+      body.theme-light .btn-primary:focus-visible {
         box-shadow: 0 4px 12px rgba(17, 24, 39, 0.12);
         transform: translateY(-1px);
       }
@@ -286,8 +300,9 @@
       }
 
       .btn-theme-active {
-        border-color: var(--accent);
-        background: var(--panel-soft);
+        border-color: var(--accent) !important;
+        background: var(--panel-soft) !important;
+        color: var(--text) !important;
         box-shadow: var(--shadow);
         font-weight: 700;
       }
@@ -519,7 +534,7 @@
 
       const STORAGE_KEYS = {
         language: "brkr_lang",
-        activeChatId: "brkr_active_chat_id",
+        legacyActiveChatId: "brkr_active_chat_id",
         legacyChats: "brkr_chats",
         theme: "brkr_theme"
       };
@@ -550,6 +565,10 @@
 
       function getUserCacheKey(userId) {
         return `brkr_cloud_chats_${userId}`;
+      }
+
+      function getUserActiveChatKey(userId) {
+        return `brkr_active_chat_id_${userId}`;
       }
 
       function updateThemeButtons(theme) {
@@ -630,6 +649,7 @@
 
       async function logout() {
         saveChatsCache();
+        saveActiveChatId();
         await supabaseClient.auth.signOut();
         currentUser = null;
         chats = [];
@@ -665,6 +685,36 @@
         } catch {
           return [];
         }
+      }
+
+      function saveActiveChatId() {
+        if (!currentUser || !activeChatId) return;
+        localStorage.setItem(getUserActiveChatKey(currentUser.id), activeChatId);
+      }
+
+      function loadActiveChatId() {
+        if (!currentUser) {
+          activeChatId = null;
+          return;
+        }
+
+        const userKey = getUserActiveChatKey(currentUser.id);
+        const userValue = localStorage.getItem(userKey);
+
+        if (userValue) {
+          activeChatId = userValue;
+          return;
+        }
+
+        const legacyValue = localStorage.getItem(STORAGE_KEYS.legacyActiveChatId);
+        if (legacyValue) {
+          activeChatId = legacyValue;
+          localStorage.setItem(userKey, legacyValue);
+          localStorage.removeItem(STORAGE_KEYS.legacyActiveChatId);
+          return;
+        }
+
+        activeChatId = null;
       }
 
       function normalizeChat(chat) {
@@ -745,14 +795,6 @@
         return chats.find((chat) => chat.id === activeChatId) || null;
       }
 
-      function saveActiveChatId() {
-        if (activeChatId) localStorage.setItem(STORAGE_KEYS.activeChatId, activeChatId);
-      }
-
-      function loadActiveChatId() {
-        activeChatId = localStorage.getItem(STORAGE_KEYS.activeChatId);
-      }
-
       function getLanguage() {
         return localStorage.getItem(STORAGE_KEYS.language) || "en";
       }
@@ -823,6 +865,7 @@
         }
 
         saveChatsCache();
+        saveActiveChatId();
       }
 
       function queueRemoteSave(chat) {
@@ -1051,6 +1094,7 @@
         renderChatList();
         renderCurrentChat();
         saveChatsCache();
+        saveActiveChatId();
 
         if (syncRemote) {
           await saveChatToSupabase(chat);
@@ -1159,6 +1203,8 @@
         const localChats = loadChatsCache();
         chats = mergeChats(remoteChats, localChats);
 
+        const exists = chats.some((chat) => chat.id === activeChatId);
+
         if (chats.length === 0) {
           await createNewChat();
           const freshRemote = await fetchChatsFromSupabase();
@@ -1169,7 +1215,6 @@
           }
         }
 
-        const exists = chats.some((chat) => chat.id === activeChatId);
         if (!exists && chats.length > 0) {
           activeChatId = chats[0].id;
           saveActiveChatId();
