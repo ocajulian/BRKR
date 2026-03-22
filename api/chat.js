@@ -61,6 +61,7 @@ export default async function handler(req, res) {
   function detectAutoMode({ message, stage }) {
     const current = normalizeText(message);
 
+    // COPYWRITER
     if (
       current.includes("dm") ||
       current.includes("copy") ||
@@ -72,12 +73,12 @@ export default async function handler(req, res) {
       current.includes("hook") ||
       current.includes("reescribe") ||
       current.includes("escribeme") ||
-      current.includes("escribeme") ||
-      current.includes("escribeme un")
+      current.includes("escríbeme")
     ) {
       return "COPYWRITER";
     }
 
+    // CFO
     if (
       current.includes("cost") ||
       current.includes("coste") ||
@@ -85,12 +86,14 @@ export default async function handler(req, res) {
       current.includes("precio") ||
       current.includes("pricing") ||
       current.includes("cuanto cuesta") ||
+      current.includes("cuánto cuesta") ||
       current.includes("cuanto me costaria") ||
-      current.includes("cuanto me costaría")
+      current.includes("cuánto me costaría")
     ) {
       return "CFO";
     }
 
+    // OFFER
     if (
       current.includes("oferta") ||
       current.includes("offer") ||
@@ -104,6 +107,27 @@ export default async function handler(req, res) {
       return "OFFER";
     }
 
+    // CMO — va antes que CTO
+    if (
+      stage === "ADS" ||
+      current.includes("canal") ||
+      current.includes("canales") ||
+      current.includes("adquisicion") ||
+      current.includes("adquisición") ||
+      current.includes("audiencia") ||
+      current.includes("marketing") ||
+      current.includes("growth") ||
+      current.includes("trafico") ||
+      current.includes("tráfico") ||
+      current.includes("campaign") ||
+      current.includes("campana") ||
+      current.includes("campaña") ||
+      current.includes("ads")
+    ) {
+      return "CMO";
+    }
+
+    // CTO
     if (
       current.includes("mvp") ||
       current.includes("build") ||
@@ -117,25 +141,7 @@ export default async function handler(req, res) {
       return "CTO";
     }
 
-    if (
-      stage === "ADS" ||
-      current.includes("ads") ||
-      current.includes("campaign") ||
-      current.includes("campana") ||
-      current.includes("campaña") ||
-      current.includes("trafico") ||
-      current.includes("tráfico") ||
-      current.includes("canal") ||
-      current.includes("canales") ||
-      current.includes("adquisicion") ||
-      current.includes("adquisición") ||
-      current.includes("audiencia") ||
-      current.includes("growth") ||
-      current.includes("marketing")
-    ) {
-      return "CMO";
-    }
-
+    // SCRAPPING
     if (
       current.includes("lead") ||
       current.includes("lista") ||
@@ -145,6 +151,7 @@ export default async function handler(req, res) {
       return "SCRAPPING";
     }
 
+    // PM
     if (
       current.includes("plan") ||
       current.includes("roadmap") ||
@@ -154,6 +161,7 @@ export default async function handler(req, res) {
       return "PM";
     }
 
+    // FORMACION
     if (
       current.includes("explica") ||
       current.includes("teach") ||
@@ -313,8 +321,8 @@ CTA:
 
     let channel = "outreach directo";
     let objective = "conseguir conversaciones reales con potenciales clientes";
-    let metric = "número de respuestas";
-    let action = "envía hoy 10 mensajes directos al perfil de cliente más obvio";
+    let metric = "numero de respuestas";
+    let action = "envia hoy 10 mensajes directos al perfil de cliente mas obvio";
 
     if (
       current.includes("linkedin") ||
@@ -326,7 +334,7 @@ CTA:
       channel = "LinkedIn o email directo";
       objective = "abrir conversaciones con decisores";
       metric = "respuestas positivas";
-      action = "haz hoy una lista de 10 decisores y envíales un mensaje corto";
+      action = "haz hoy una lista de 10 decisores y enviales un mensaje corto";
     } else if (
       current.includes("instagram") ||
       current.includes("tiktok") ||
@@ -335,8 +343,8 @@ CTA:
       current.includes("comunidad")
     ) {
       channel = "DM directo a usuarios potenciales";
-      objective = "validar interés real antes de hacer contenido o ads";
-      metric = "respuestas útiles";
+      objective = "validar interes real antes de hacer contenido o ads";
+      metric = "respuestas utiles";
       action = "escribe hoy 10 mensajes cortos a personas que encajen con el perfil";
     } else if (
       current.includes("ads") ||
@@ -344,9 +352,9 @@ CTA:
       current.includes("campaña")
     ) {
       channel = "1 campaña simple en un solo canal";
-      objective = "medir si el mensaje genera interés";
-      metric = "CTR o respuestas, no vanity metrics";
-      action = "lanza una sola pieza creativa con una sola promesa y mide solo una métrica";
+      objective = "medir si el mensaje genera interes";
+      metric = "CTR o respuestas";
+      action = "lanza una sola pieza creativa con una sola promesa y mide solo una metrica";
     }
 
     return `1) Canal principal
