@@ -109,7 +109,7 @@ export default async function handler(req, res) {
       "trafico",
     ]);
 
-    // FORMACION — va antes que COPYWRITER y CTO
+    // FORMACION — intención didáctica manda sobre tema
     if (
       current.includes("explica") ||
       current.includes("explícame") ||
@@ -470,17 +470,50 @@ Define el tipo exacto de decisor o contacto que necesitas.
 elige un nicho concreto y prepara una lista inicial de 10 contactos verificables`;
   }
 
-  function forceFormacion(text, mode) {
+  function forceFormacion(text, mode, originalMessage) {
     if (mode !== "FORMACION") return text;
 
-    return `1) Concepto mínimo
-Explica la idea en una sola definición corta y práctica.
+    const lowerText = normalizeText(text);
+    const question = normalizeText(originalMessage);
+
+    const looksWeak =
+      lowerText.includes("explica la idea en una sola definicion corta y practica") ||
+      lowerText.includes("da un ejemplo basico que ayude a entenderlo sin teoria larga") ||
+      lowerText.includes("haz ahora una tarea pequena para aplicar el concepto inmediatamente") ||
+      lowerText.length < 80;
+
+    if (!looksWeak) return text;
+
+    if (question.includes("landing page") || question.includes("landing")) {
+      return `1) Concepto mínimo
+Una landing page es una página diseñada para que una persona haga una sola acción concreta, como dejar su email o pedir información.
 
 2) Ejemplo simple
-Da un ejemplo básico que ayude a entenderlo sin teoría larga.
+Si ofreces un servicio, la landing no explica toda tu empresa: solo muestra el problema, la promesa y un botón para contactar o apuntarse.
 
 3) Acción
-Haz ahora una tarea pequeña para aplicar el concepto inmediatamente.`;
+Abre un documento y escribe hoy los 3 bloques mínimos de tu landing: problema, promesa y botón.`;
+    }
+
+    if (question.includes("mvp")) {
+      return `1) Concepto mínimo
+Un MVP es la versión más pequeña de una solución que te permite comprobar si alguien realmente la quiere o pagaría por ella.
+
+2) Ejemplo simple
+Si quieres vender una app, el MVP no es la app completa: puede ser una página simple, una demo o una oferta mínima para ver si alguien muestra interés real.
+
+3) Acción
+Escribe ahora qué parte mínima de tu idea te permitiría validarla sin construir todo el producto.`;
+    }
+
+    return `1) Concepto mínimo
+Es la versión más simple del concepto, explicada de forma práctica y sin teoría innecesaria.
+
+2) Ejemplo simple
+Piensa en el caso más pequeño posible donde se entienda cómo funciona en la realidad.
+
+3) Acción
+Escribe ahora un ejemplo de tu caso aplicado en una frase.`;
   }
 
   try {
@@ -525,7 +558,7 @@ Haz ahora una tarea pequeña para aplicar el concepto inmediatamente.`;
     finalText = forceCmo(finalText, resolvedMode, message);
     finalText = forcePm(finalText, resolvedMode, message);
     finalText = forceScrapping(finalText, resolvedMode);
-    finalText = forceFormacion(finalText, resolvedMode);
+    finalText = forceFormacion(finalText, resolvedMode, message);
 
     return res.status(200).json({
       reply: finalText,
