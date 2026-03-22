@@ -22,47 +22,26 @@
         --bubble-assistant-text: #111827;
         --input-bg: #f9fafb;
         --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-        --glow: 0 0 0 rgba(0, 0, 0, 0);
-      }
-
-      body.theme-light {
-        --bg: #f5f6f8;
-        --panel: #ffffff;
-        --panel-soft: #fafafa;
-        --border: #e5e7eb;
-        --text: #111827;
-        --muted: #6b7280;
-        --accent: #111827;
-        --accent-text: #ffffff;
-        --bubble-user: #111827;
-        --bubble-user-text: #ffffff;
-        --bubble-assistant: #ffffff;
-        --bubble-assistant-text: #111827;
-        --input-bg: #f9fafb;
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-        --glow: 0 0 0 rgba(0, 0, 0, 0);
       }
 
       body.theme-dark {
-        --bg: #0b0f14;
-        --panel: #12171d;
-        --panel-soft: #0f141a;
-        --border: #1f2730;
-        --text: #e6edf3;
-        --muted: #7d8b99;
-        --accent: #00e0ff;
-        --accent-text: #001418;
-        --bubble-user: #00e0ff;
-        --bubble-user-text: #001418;
-        --bubble-assistant: #151b22;
-        --bubble-assistant-text: #e6edf3;
-        --input-bg: #0b0f14;
-        --shadow: 0 4px 20px rgba(0, 224, 255, 0.08);
-        --glow: 0 0 12px rgba(0, 224, 255, 0.6);
+        --bg: #111315;
+        --panel: #17191c;
+        --panel-soft: #141619;
+        --border: #262a30;
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: #f3f4f6;
+        --accent-text: #111315;
+        --bubble-user: #f3f4f6;
+        --bubble-user-text: #111315;
+        --bubble-assistant: #1b1f24;
+        --bubble-assistant-text: #f3f4f6;
+        --input-bg: #111315;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
       }
 
       * { box-sizing: border-box; }
-
       html, body {
         margin: 0;
         height: 100%;
@@ -70,342 +49,60 @@
         background: var(--bg);
         color: var(--text);
       }
-
-      body {
-        transition:
-          background 0.18s ease,
-          color 0.18s ease,
-          border-color 0.18s ease,
-          box-shadow 0.18s ease;
-      }
-
       button, input, textarea, select { font: inherit; }
 
-      .app-shell {
-        height: 100vh;
-        display: flex;
-        background: var(--bg);
-        color: var(--text);
-      }
-
-      .sidebar {
-        width: 280px;
-        border-right: 1px solid var(--border);
-        background: var(--panel);
-        display: none;
-        flex-direction: column;
-      }
-
-      .sidebar-header, .sidebar-footer, .topbar {
-        background: var(--panel);
-      }
-
-      .sidebar-header {
-        padding: 20px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .brand-title {
-        font-size: 32px;
-        font-weight: 800;
-        letter-spacing: -1px;
-      }
-
-      .brand-subtitle, .muted {
-        color: var(--muted);
-      }
-
-      .sidebar-list {
-        flex: 1;
-        overflow-y: auto;
-        padding: 10px;
-      }
-
-      .chat-item {
-        padding: 12px;
-        margin-bottom: 8px;
-        border-radius: 14px;
-        cursor: pointer;
-        border: 1px solid var(--border);
-        background: var(--panel);
-        transition: 0.15s ease;
-      }
-
-      .chat-item:hover {
-        background: var(--panel-soft);
-      }
-
-      .chat-item.active {
-        border-color: var(--accent);
-        background: var(--panel-soft);
-        box-shadow: var(--shadow);
-      }
-
-      .sidebar-footer {
-        padding: 14px;
-        border-top: 1px solid var(--border);
-      }
-
-      .user-box {
-        margin-bottom: 10px;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--panel-soft);
-      }
-
-      .main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-      }
-
-      .screen {
-        display: none;
-        flex: 1;
-      }
-
-      .center-screen {
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-      }
-
-      .card {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 32px;
-        width: 100%;
-        max-width: 520px;
-        box-shadow: var(--shadow);
-      }
-
-      .auth-card {
-        max-width: 460px;
-      }
-
-      .topbar {
-        padding: 18px 20px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .topbar-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-      }
-
-      .chat-title {
-        font-size: 28px;
-        font-weight: 800;
-        letter-spacing: -1px;
-      }
-
-      .toolbar {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .controls-row {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 16px;
-      }
-
-      .field label {
-        display: block;
-        font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 6px;
-      }
-
-      .select, .text-input, .text-area, .btn {
-        border-radius: 14px;
-        border: 1px solid var(--border);
-      }
-
-      .select, .text-input {
-        padding: 10px 12px;
-        background: var(--panel);
-        color: var(--text);
-      }
-
-      .text-area {
-        width: 100%;
-        resize: none;
-        padding: 16px 18px;
-        font-size: 16px;
-        line-height: 1.6;
-        background: var(--input-bg);
-        color: var(--text);
-        outline: none;
-      }
-
-      .btn {
-        padding: 10px 12px;
-        background: var(--panel);
-        color: var(--text);
-        cursor: pointer;
-        transition:
-          background 0.15s ease,
-          color 0.15s ease,
-          border-color 0.15s ease,
-          transform 0.15s ease,
-          box-shadow 0.15s ease;
-      }
-
-      .btn:hover,
-      .btn:focus-visible {
-        background: var(--panel-soft);
-        color: var(--text);
-        border-color: var(--border);
-        outline: none;
-      }
-
-      .btn-primary {
-        border: none;
-        background: var(--accent);
-        color: var(--accent-text);
-        font-weight: 700;
-        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-      }
-
-      .btn-primary:hover,
-      .btn-primary:focus-visible {
-        background: var(--accent);
-        color: var(--accent-text);
-        border-color: transparent;
-        outline: none;
-      }
-
-      body.theme-dark .btn-primary:hover,
-      body.theme-dark .btn-primary:focus-visible {
-        box-shadow: var(--glow);
-        transform: translateY(-1px);
-      }
-
-      body.theme-light .btn-primary:hover,
-      body.theme-light .btn-primary:focus-visible {
-        box-shadow: 0 4px 12px rgba(17, 24, 39, 0.12);
-        transform: translateY(-1px);
-      }
-
-      .btn-full {
-        width: 100%;
-      }
-
-      .btn-theme-active {
-        border-color: var(--accent) !important;
-        background: var(--panel-soft) !important;
-        color: var(--text) !important;
-        box-shadow: var(--shadow);
-        font-weight: 700;
-      }
-
-      .messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 24px 24px 120px 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-
-      .bubble-row {
-        display: flex;
-      }
-
-      .bubble-row.user {
-        justify-content: flex-end;
-      }
-
-      .bubble-row.assistant {
-        justify-content: flex-start;
-      }
-
-      .bubble {
-        max-width: 720px;
-        padding: 14px 16px;
-        border-radius: 18px;
-        box-shadow: var(--shadow);
-        line-height: 1.55;
-      }
-
-      .bubble.user {
-        background: var(--bubble-user);
-        color: var(--bubble-user-text);
-        border: none;
-        font-weight: 600;
-      }
-
-      .bubble.assistant {
-        background: var(--bubble-assistant);
-        color: var(--bubble-assistant-text);
-        border: 1px solid var(--border);
-      }
-
-      .bubble-label {
-        font-size: 12px;
-        margin-bottom: 6px;
-        opacity: 0.7;
-        font-weight: 600;
-      }
-
-      .bubble-meta {
-        font-size: 11px;
-        color: var(--muted);
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px dashed var(--border);
-      }
-
-      .composer {
-        border-top: 1px solid var(--border);
-        background: var(--panel);
-        padding: 16px 20px 20px 20px;
-      }
-
-      .composer-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
-        gap: 12px;
-      }
-
-      .status {
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .theme-switch {
-        display: flex;
-        gap: 8px;
-      }
-
-      .lang-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-
-      .small {
-        font-size: 13px;
-      }
+      .app-shell { height: 100vh; display: flex; background: var(--bg); color: var(--text); }
+      .sidebar { width: 280px; border-right: 1px solid var(--border); background: var(--panel); display: none; flex-direction: column; }
+      .sidebar-header, .sidebar-footer, .topbar { background: var(--panel); }
+      .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+      .brand-title { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+      .brand-subtitle, .muted { color: var(--muted); }
+      .sidebar-list { flex: 1; overflow-y: auto; padding: 10px; }
+      .chat-item { padding: 12px; margin-bottom: 8px; border-radius: 14px; cursor: pointer; border: 1px solid var(--border); background: var(--panel); transition: 0.15s ease; }
+      .chat-item.active { border-color: var(--accent); background: var(--panel-soft); }
+      .sidebar-footer { padding: 14px; border-top: 1px solid var(--border); }
+      .user-box { margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-soft); }
+      .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+      .screen { display: none; flex: 1; }
+      .center-screen { align-items: center; justify-content: center; padding: 24px; }
+      .card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 32px; width: 100%; max-width: 520px; box-shadow: var(--shadow); }
+      .auth-card { max-width: 460px; }
+      .topbar { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+      .topbar-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+      .chat-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+      .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+      .controls-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+      .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+      .select, .text-input, .text-area, .btn { border-radius: 14px; border: 1px solid var(--border); }
+      .select, .text-input { padding: 10px 12px; background: var(--panel); color: var(--text); }
+      .text-area { width: 100%; resize: none; padding: 16px 18px; font-size: 16px; line-height: 1.6; background: var(--input-bg); color: var(--text); outline: none; }
+      .btn { padding: 10px 12px; background: var(--panel); color: var(--text); cursor: pointer; }
+      .btn-primary { border: none; background: var(--accent); color: var(--accent-text); font-weight: 600; }
+      .btn-full { width: 100%; }
+      .messages { flex: 1; overflow-y: auto; padding: 24px 24px 120px 24px; display: flex; flex-direction: column; gap: 18px; }
+      .bubble-row { display: flex; }
+      .bubble-row.user { justify-content: flex-end; }
+      .bubble-row.assistant { justify-content: flex-start; }
+      .bubble { max-width: 720px; padding: 14px 16px; border-radius: 18px; box-shadow: var(--shadow); line-height: 1.55; }
+      .bubble.user { background: var(--bubble-user); color: var(--bubble-user-text); }
+      .bubble.assistant { background: var(--bubble-assistant); color: var(--bubble-assistant-text); border: 1px solid var(--border); }
+      .bubble-label { font-size: 12px; margin-bottom: 6px; opacity: 0.65; font-weight: 500; }
+      .bubble-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--border); }
+      .composer { border-top: 1px solid var(--border); background: var(--panel); padding: 16px 20px 20px 20px; }
+      .composer-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 12px; }
+      .status { font-size: 12px; color: var(--muted); }
+      .theme-switch { display: flex; gap: 8px; }
+      .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .small { font-size: 13px; }
     </style>
   </head>
 
-  <body class="theme-dark">
+  <body class="theme-light">
     <div class="app-shell">
       <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
           <div class="brand-title">BRKR</div>
-          <div class="brand-subtitle small" style="margin-top:6px;">Decision engine</div>
+          <div class="brand-subtitle small" style="margin-top:6px;">Cloud multi-chat</div>
           <button onclick="createNewChat()" class="btn btn-primary btn-full" style="margin-top:14px; padding:12px 14px;">
             New chat
           </button>
@@ -420,8 +117,8 @@
           </div>
 
           <div class="theme-switch" style="margin-bottom:10px;">
-            <button id="themeLightBtn" class="btn btn-full" onclick="setTheme('light')">Clair</button>
-            <button id="themeDarkBtn" class="btn btn-full" onclick="setTheme('dark')">Sombre</button>
+            <button class="btn btn-full" onclick="setTheme('light')">Clair</button>
+            <button class="btn btn-full" onclick="setTheme('dark')">Sombre</button>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:8px;">
@@ -473,7 +170,7 @@
             <div class="topbar-row">
               <div>
                 <div id="chatTitle" class="chat-title">BRKR</div>
-                <div id="topHint" class="muted small" style="margin-top:6px;">Decision engine.</div>
+                <div id="topHint" class="muted small" style="margin-top:6px;">Business decision engine.</div>
               </div>
 
               <div class="toolbar">
@@ -534,7 +231,7 @@
 
       const STORAGE_KEYS = {
         language: "brkr_lang",
-        legacyActiveChatId: "brkr_active_chat_id",
+        activeChatId: "brkr_active_chat_id",
         legacyChats: "brkr_chats",
         theme: "brkr_theme"
       };
@@ -560,32 +257,20 @@
       const modeEl = document.getElementById("mode");
       const chatTitleEl = document.getElementById("chatTitle");
       const userEmailEl = document.getElementById("userEmail");
-      const themeLightBtn = document.getElementById("themeLightBtn");
-      const themeDarkBtn = document.getElementById("themeDarkBtn");
 
       function getUserCacheKey(userId) {
         return `brkr_cloud_chats_${userId}`;
       }
 
-      function getUserActiveChatKey(userId) {
-        return `brkr_active_chat_id_${userId}`;
-      }
-
-      function updateThemeButtons(theme) {
-        themeLightBtn.classList.toggle("btn-theme-active", theme === "light");
-        themeDarkBtn.classList.toggle("btn-theme-active", theme === "dark");
-      }
-
       function setTheme(theme) {
-        const finalTheme = theme === "light" ? "light" : "dark";
+        const finalTheme = theme === "dark" ? "dark" : "light";
         bodyEl.classList.remove("theme-light", "theme-dark");
-        bodyEl.classList.add(finalTheme === "light" ? "theme-light" : "theme-dark");
+        bodyEl.classList.add(finalTheme === "dark" ? "theme-dark" : "theme-light");
         localStorage.setItem(STORAGE_KEYS.theme, finalTheme);
-        updateThemeButtons(finalTheme);
       }
 
       function initTheme() {
-        const saved = localStorage.getItem(STORAGE_KEYS.theme) || "dark";
+        const saved = localStorage.getItem(STORAGE_KEYS.theme) || "light";
         setTheme(saved);
       }
 
@@ -649,7 +334,6 @@
 
       async function logout() {
         saveChatsCache();
-        saveActiveChatId();
         await supabaseClient.auth.signOut();
         currentUser = null;
         chats = [];
@@ -685,36 +369,6 @@
         } catch {
           return [];
         }
-      }
-
-      function saveActiveChatId() {
-        if (!currentUser || !activeChatId) return;
-        localStorage.setItem(getUserActiveChatKey(currentUser.id), activeChatId);
-      }
-
-      function loadActiveChatId() {
-        if (!currentUser) {
-          activeChatId = null;
-          return;
-        }
-
-        const userKey = getUserActiveChatKey(currentUser.id);
-        const userValue = localStorage.getItem(userKey);
-
-        if (userValue) {
-          activeChatId = userValue;
-          return;
-        }
-
-        const legacyValue = localStorage.getItem(STORAGE_KEYS.legacyActiveChatId);
-        if (legacyValue) {
-          activeChatId = legacyValue;
-          localStorage.setItem(userKey, legacyValue);
-          localStorage.removeItem(STORAGE_KEYS.legacyActiveChatId);
-          return;
-        }
-
-        activeChatId = null;
       }
 
       function normalizeChat(chat) {
@@ -795,6 +449,14 @@
         return chats.find((chat) => chat.id === activeChatId) || null;
       }
 
+      function saveActiveChatId() {
+        if (activeChatId) localStorage.setItem(STORAGE_KEYS.activeChatId, activeChatId);
+      }
+
+      function loadActiveChatId() {
+        activeChatId = localStorage.getItem(STORAGE_KEYS.activeChatId);
+      }
+
       function getLanguage() {
         return localStorage.getItem(STORAGE_KEYS.language) || "en";
       }
@@ -865,7 +527,6 @@
         }
 
         saveChatsCache();
-        saveActiveChatId();
       }
 
       function queueRemoteSave(chat) {
@@ -1004,22 +665,22 @@
       function applyLanguageUI() {
         const lang = getLanguage();
         if (lang === "es") {
-          topHintEl.textContent = "Motor de decisión.";
+          topHintEl.textContent = "Motor de decisión business.";
           statusEl.textContent = "Listo.";
           inputEl.placeholder = "Escribe aquí...";
           sendBtn.textContent = "Enviar";
         } else if (lang === "fr") {
-          topHintEl.textContent = "Moteur de décision.";
+          topHintEl.textContent = "Moteur de décision business.";
           statusEl.textContent = "Prêt.";
           inputEl.placeholder = "Écrivez ici...";
           sendBtn.textContent = "Envoyer";
         } else if (lang === "other") {
-          topHintEl.textContent = "Decision engine.";
+          topHintEl.textContent = "Business decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write in your language...";
           sendBtn.textContent = "Send";
         } else {
-          topHintEl.textContent = "Decision engine.";
+          topHintEl.textContent = "Business decision engine.";
           statusEl.textContent = "Ready.";
           inputEl.placeholder = "Write here...";
           sendBtn.textContent = "Send";
@@ -1094,7 +755,6 @@
         renderChatList();
         renderCurrentChat();
         saveChatsCache();
-        saveActiveChatId();
 
         if (syncRemote) {
           await saveChatToSupabase(chat);
@@ -1203,8 +863,6 @@
         const localChats = loadChatsCache();
         chats = mergeChats(remoteChats, localChats);
 
-        const exists = chats.some((chat) => chat.id === activeChatId);
-
         if (chats.length === 0) {
           await createNewChat();
           const freshRemote = await fetchChatsFromSupabase();
@@ -1215,6 +873,7 @@
           }
         }
 
+        const exists = chats.some((chat) => chat.id === activeChatId);
         if (!exists && chats.length > 0) {
           activeChatId = chats[0].id;
           saveActiveChatId();
