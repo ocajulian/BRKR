@@ -117,23 +117,8 @@ export default async function handler(req, res) {
     return terms.some((t) => text.includes(t));
   }
 
-  function scoreMatches(text, terms) {
-    return terms.reduce((acc, term) => acc + (text.includes(term) ? 1 : 0), 0);
-  }
-
-  function getRecentUserText(hist) {
-    return normalizeText(
-      hist
-        .filter((m) => m.role === "user")
-        .slice(-3)
-        .map((m) => m.content)
-        .join("\n")
-    );
-  }
-
-  function detectAutoMode({ stage, message, history }) {
+  function detectAutoMode({ stage, message }) {
     const current = normalizeText(message);
-    const recentUserText = getRecentUserText(history);
 
     const cfoTerms = [
       "worst-case",
@@ -354,21 +339,23 @@ export default async function handler(req, res) {
       "tiktok ads",
     ];
 
-    const currentBuildIntent =
-      includesAny(current, ctoTerms) ||
-      /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
-      /que\s+(?:construyo|debo construir|no construir)/.test(current);
+    const currentCopyIntent =
+      includesAny(current, copywriterTerms);
 
     const currentMoneyIntent =
       includesAny(current, cfoTerms) ||
       /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(current);
 
-    const currentCopyIntent =
-      includesAny(current, copywriterTerms) && !currentBuildIntent && !currentMoneyIntent;
+    const currentBuildIntent =
+      includesAny(current, ctoTerms) ||
+      /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
+      /que\s+(?:construyo|debo construir|no construir)/.test(current);
 
-    const currentScrappingIntent = includesAny(current, scrappingTerms);
+    const currentScrappingIntent =
+      includesAny(current, scrappingTerms);
 
-    const currentPmIntent = includesAny(current, pmTerms);
+    const currentPmIntent =
+      includesAny(current, pmTerms);
 
     const currentTrainingIntent =
       includesAny(current, trainingTerms) &&
@@ -377,35 +364,19 @@ export default async function handler(req, res) {
       !currentCopyIntent;
 
     const currentCmoIntent =
-      includesAny(current, cmoTerms) && !currentCopyIntent;
+      includesAny(current, cmoTerms) &&
+      !currentCopyIntent;
 
-    // PRIORIDAD ABSOLUTA: el mensaje actual manda
+    // El mensaje actual manda. Sin arrastre de historial.
     if (currentCopyIntent) return "COPYWRITER";
     if (currentMoneyIntent) return "CFO";
     if (currentBuildIntent) return "CTO";
     if (currentScrappingIntent) return "SCRAPPING";
     if (currentPmIntent) return "PM";
     if (currentTrainingIntent) return "FORMACION";
-    if (normalizedStage === "ADS" || currentCmoIntent) return "CMO";
+    if (stage === "ADS" || currentCmoIntent) return "CMO";
 
-    // Fallback débil: usar historial solo si el mensaje actual es ambiguo
-    const weakScores = {
-      CFO: scoreMatches(recentUserText, cfoTerms),
-      CTO: scoreMatches(recentUserText, ctoTerms),
-      COPYWRITER: scoreMatches(recentUserText, copywriterTerms),
-      SCRAPPING: scoreMatches(recentUserText, scrappingTerms),
-      PM: scoreMatches(recentUserText, pmTerms),
-      FORMACION: scoreMatches(recentUserText, trainingTerms),
-      CMO: scoreMatches(recentUserText, cmoTerms),
-    };
-
-    const sortedWeakModes = Object.entries(weakScores).sort((a, b) => b[1] - a[1]);
-    const [bestWeakMode, bestWeakScore] = sortedWeakModes[0] || ["CODIR", 0];
-
-    if (bestWeakScore >= 2) {
-      return bestWeakMode;
-    }
-
+    // Fallback oficial BRKR
     return "CODIR";
   }
 
@@ -417,7 +388,6 @@ export default async function handler(req, res) {
       ? detectAutoMode({
           stage: normalizedStage,
           message,
-          history: sanitizedHistory,
         })
       : safeRequestedMode;
 
