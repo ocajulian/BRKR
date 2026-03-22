@@ -1,3 +1,12 @@
+import {
+  MASTER_PROMPT,
+  STAGE_ALIASES,
+  STAGE_PROMPTS,
+  MODE_PROMPTS,
+  VALID_MODES,
+  getLanguagePrompt,
+} from "../lib/brkr-prompts.js";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ reply: "Use POST" });
@@ -20,72 +29,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ reply: "Missing OPENAI_API_KEY" });
   }
 
-  const masterPrompt =
-    process.env.BRKR_SYSTEM_PROMPT ||
-    "Eres BRKR. IA de ejecución business. Directo, claro y accionable. Nunca respondas como chatbot genérico. Siempre cierras con una acción, decisión contextual o pregunta que desbloquee avance real.";
-
-  const stageAliases = {
-    IDEA: "IDEA",
-    VALIDACION: "VALIDACION",
-    VALIDATION: "VALIDACION",
-    OFERTA: "OFERTA",
-    OFFER: "OFERTA",
-    ADS: "ADS",
-  };
-
   const normalizedStageInput = String(stage).toUpperCase();
-  const normalizedStage = stageAliases[normalizedStageInput] || "IDEA";
-
-  const stagePrompts = {
-    IDEA:
-      "ETAPA IDEA: define problema, ICP y por qué ahora. No avances sin claridad. Si hay vaguedad, corrígela. No derives demasiado pronto a marketing o construcción.",
-    VALIDACION:
-      "ETAPA VALIDACION: busca evidencia real. No aceptes intuiciones como prueba. Prioriza señal antes que entusiasmo. Si hablas de costes, modela costes de validación, no de empresa completa.",
-    OFERTA:
-      "ETAPA OFERTA: define la oferta mínima para validar pago real en menos de 48h. Prioriza solo: 1 producto, 1 problema, 1 promesa, 1 precio y 1 canal directo. Prohibido añadir múltiples productos, bundles, comunidad, suscripciones, descuentos, testimonios, encuestas, contenido extra o features adicionales. Prohibido proponer Ads en esta etapa si el test puede hacerse con contacto directo. La única señal que importa es: alguien intenta pagar.",
-    ADS:
-      "ETAPA ADS: crea mensajes de adquisición o validación. Elige un ángulo claro, una oferta clara y una métrica simple. Nada de marketing teatro.",
-  };
-
-  const modePrompts = {
-    CODIR:
-      "MODO CODIR: eres co-director. Tomas control del proceso. Si falta información, haces supuestos razonables y avanzas en paralelo. Sintetizas, reduces ambigüedad y llevas al siguiente paso real. No bloqueas el flujo innecesariamente.",
-    CFO:
-      "MODO CFO: actúas como CFO. Modela el peor escenario realista para 30 días. Asume 0 ingresos. No expliques teoría. No uses placeholders. No inventes equipos grandes ni costes enterprise sin motivo. Da rangos razonables para un emprendedor solo o equipo pequeño. Siempre responde con: 1) supuestos, 2) coste MVP mínimo, 3) coste adquisición/test, 4) coste herramientas, 5) coste tiempo del fundador, 6) total 30 días, 7) decisión final obligatoria: elige SOLO una opción (GO, ITERAR o STOP).",
-    CTO:
-      "MODO CTO: define el MVP mínimo para obtener señal real. Di qué construir, qué no construir, riesgos técnicos y stack mínimo. Evita sobreconstrucción. No propongas campañas, testimonios, encuestas, Ads ni extras de marketing. Responde con estructura breve: 1) objetivo del MVP, 2) qué construir ahora, 3) qué NO construir ahora, 4) riesgo principal, 5) siguiente acción.",
-    CMO:
-      "MODO CMO: elige foco de adquisición. Un canal principal, un objetivo medible y una métrica clara. Nada de marketing teatro.",
-    SCRAPPING:
-      "MODO SCRAPPING: construye listas sniper de decisores only. Usa criterios concretos, fuentes públicas y campos útiles para contacto.",
-    COPYWRITER:
-      "MODO COPYWRITER: escribes para provocar respuesta real, no para sonar bien. Nunca escribes anuncios genéricos ni promesas vacías. Siempre escribes para validación, no para escalar. Tu objetivo es iniciar conversación o medir interés, no vender producto terminado. Responde con la pieza pedida y nada de explicación innecesaria.",
-    PM:
-      "MODO PM: organiza ejecución. Entregables, responsables, secuencia, deadline y siguiente acción.",
-    FORMACION:
-      "MODO FORMACION: enseña solo lo mínimo necesario para ejecutar ahora. Explicación breve, ejemplo simple y tarea inmediata.",
-  };
-
-  const validModes = new Set([
-    "AUTO",
-    "CODIR",
-    "CFO",
-    "CTO",
-    "CMO",
-    "SCRAPPING",
-    "COPYWRITER",
-    "PM",
-    "FORMACION",
-  ]);
-
-  const languagePrompt =
-    language === "es"
-      ? "Responde en español."
-      : language === "fr"
-      ? "Réponds en français."
-      : language === "other"
-      ? "Reply in the user's language."
-      : "Reply in English.";
+  const normalizedStage = STAGE_ALIASES[normalizedStageInput] || "IDEA";
 
   const sanitizedHistory = Array.isArray(history)
     ? history
@@ -115,10 +60,6 @@ export default async function handler(req, res) {
 
   function includesAny(text, terms) {
     return terms.some((t) => text.includes(t));
-  }
-
-  function hasPattern(text, patterns) {
-    return patterns.some((rx) => rx.test(text));
   }
 
   function detectBlockedDomains(text, domainTerms) {
@@ -438,7 +379,6 @@ export default async function handler(req, res) {
       );
 
     const currentScrappingIntent = includesAny(current, scrappingTerms);
-
     const currentPmIntent = includesAny(current, pmTerms);
 
     const currentTrainingIntent =
@@ -464,7 +404,7 @@ export default async function handler(req, res) {
   }
 
   const requestedMode = String(mode || "AUTO").toUpperCase();
-  const safeRequestedMode = validModes.has(requestedMode) ? requestedMode : "AUTO";
+  const safeRequestedMode = VALID_MODES.has(requestedMode) ? requestedMode : "AUTO";
 
   const resolvedMode =
     safeRequestedMode === "AUTO"
@@ -475,10 +415,10 @@ export default async function handler(req, res) {
       : safeRequestedMode;
 
   const inputMessages = [
-    { role: "system", content: masterPrompt },
-    { role: "system", content: languagePrompt },
-    { role: "system", content: stagePrompts[normalizedStage] || stagePrompts.IDEA },
-    { role: "system", content: modePrompts[resolvedMode] || modePrompts.CODIR },
+    { role: "system", content: MASTER_PROMPT },
+    { role: "system", content: getLanguagePrompt(language) },
+    { role: "system", content: STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA },
+    { role: "system", content: MODE_PROMPTS[resolvedMode] || MODE_PROMPTS.CODIR },
     ...sanitizedHistory,
     { role: "user", content: message },
   ];
