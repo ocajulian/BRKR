@@ -117,22 +117,41 @@ export default async function handler(req, res) {
     return terms.some((t) => text.includes(t));
   }
 
-  function isNegated(text, terms) {
-    return terms.some((term) => {
-      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function hasPattern(text, patterns) {
+    return patterns.some((rx) => rx.test(text));
+  }
 
-      const patterns = [
-        new RegExp(`\\bsin\\s+[^.]{0,40}\\b${escaped}\\b`),
-        new RegExp(`\\bno\\s+quiero\\s+[^.]{0,40}\\b${escaped}\\b`),
-        new RegExp(`\\bno\\s+meterme\\s+[^.]{0,40}\\b${escaped}\\b`),
-        new RegExp(`\\bno\\s+entrar\\s+[^.]{0,40}\\b${escaped}\\b`),
-        new RegExp(`\\btodavia\\s+no\\s+[^.]{0,40}\\b${escaped}\\b`),
-        new RegExp(`\\bnot\\s+[^.]{0,40}\\b${escaped}\\b`),
-        new RegExp(`\\bwithout\\s+[^.]{0,40}\\b${escaped}\\b`),
-      ];
+  function detectBlockedDomains(text, domainTerms) {
+    const negativeOpeners = [
+      "sin",
+      "todavia no",
+      "no quiero",
+      "no meterme en",
+      "no entrar en",
+      "no entrar todavia en",
+      "sin meterme en",
+      "without",
+      "not yet",
+      "i dont want",
+      "i do not want",
+    ];
 
-      return patterns.some((rx) => rx.test(text));
-    });
+    const blocked = new Set();
+
+    for (const opener of negativeOpeners) {
+      const openerIndex = text.indexOf(opener);
+      if (openerIndex === -1) continue;
+
+      const window = text.slice(openerIndex, openerIndex + 120);
+
+      for (const [domain, terms] of Object.entries(domainTerms)) {
+        if (terms.some((term) => window.includes(term))) {
+          blocked.add(domain);
+        }
+      }
+    }
+
+    return blocked;
   }
 
   function detectAutoMode({ stage, message }) {
@@ -360,67 +379,67 @@ export default async function handler(req, res) {
       "tiktok ads",
     ];
 
-    const cfoNegated = isNegated(current, [
-      "coste",
-      "costes",
-      "costo",
-      "costos",
-      "precio",
-      "precios",
-      "dinero",
-      "budget",
-      "pricing",
-      "cost",
-      "costs",
-    ]);
+    const blockedDomains = detectBlockedDomains(current, {
+      CFO: [
+        "pricing",
+        "price",
+        "precio",
+        "precios",
+        "cost",
+        "costs",
+        "coste",
+        "costes",
+        "costo",
+        "costos",
+        "dinero",
+        "budget",
+      ],
+      CTO: [
+        "producto",
+        "mvp",
+        "construir",
+        "build",
+        "stack",
+        "api",
+        "arquitectura",
+        "technical",
+        "tecnico",
+      ],
+      CMO: [
+        "ads",
+        "anuncios",
+        "marketing",
+        "campaign",
+        "campaigns",
+        "campana",
+        "campanas",
+        "trafico",
+        "adquisicion",
+        "canal",
+        "canales",
+      ],
+    });
 
-    const ctoNegated = isNegated(current, [
-      "producto",
-      "mvp",
-      "construir",
-      "build",
-      "stack",
-      "technical",
-      "tecnico",
-      "api",
-      "arquitectura",
-    ]);
-
-    const cmoNegated = isNegated(current, [
-      "ads",
-      "anuncios",
-      "marketing",
-      "campaign",
-      "campaigns",
-      "trafico",
-      "adquisicion",
-      "canal",
-      "canales",
-    ]);
-
-    const currentCopyIntent =
-      includesAny(current, copywriterTerms);
+    const currentCopyIntent = includesAny(current, copywriterTerms);
 
     const currentMoneyIntent =
-      !cfoNegated &&
+      !blockedDomains.has("CFO") &&
       (
         includesAny(current, cfoTerms) ||
         /(?:cuanto|how much)\s+(?:cuesta|costaria|cobrar|cost)/.test(current)
       );
 
     const currentBuildIntent =
-      !ctoNegated &&
+      !blockedDomains.has("CTO") &&
       (
         includesAny(current, ctoTerms) ||
         /(?:como|how)\s+(?:construir|hacer|build)/.test(current) ||
         /que\s+(?:construyo|debo construir|no construir)/.test(current)
       );
 
-    const currentScrappingIntent =
-      includesAny(current, scrappingTerms);
+    const currentScrappingIntent = includesAny(current, scrappingTerms);
 
-    const currentPmIntent =
-      includesAny(current, pmTerms);
+    const currentPmIntent = includesAny(current, pmTerms);
 
     const currentTrainingIntent =
       includesAny(current, trainingTerms) &&
@@ -429,7 +448,7 @@ export default async function handler(req, res) {
       !currentCopyIntent;
 
     const currentCmoIntent =
-      !cmoNegated &&
+      !blockedDomains.has("CMO") &&
       includesAny(current, cmoTerms) &&
       !currentCopyIntent;
 
@@ -439,7 +458,7 @@ export default async function handler(req, res) {
     if (currentScrappingIntent) return "SCRAPPING";
     if (currentPmIntent) return "PM";
     if (currentTrainingIntent) return "FORMACION";
-    if ((stage === "ADS" && !cmoNegated) || currentCmoIntent) return "CMO";
+    if ((stage === "ADS" && !blockedDomains.has("CMO")) || currentCmoIntent) return "CMO";
 
     return "CODIR";
   }
