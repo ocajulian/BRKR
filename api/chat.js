@@ -72,7 +72,8 @@ export default async function handler(req, res) {
       current.includes("hook") ||
       current.includes("reescribe") ||
       current.includes("escribeme") ||
-      current.includes("escríbeme")
+      current.includes("escribeme") ||
+      current.includes("escribeme un")
     ) {
       return "COPYWRITER";
     }
@@ -84,7 +85,8 @@ export default async function handler(req, res) {
       current.includes("precio") ||
       current.includes("pricing") ||
       current.includes("cuanto cuesta") ||
-      current.includes("cuánto cuesta")
+      current.includes("cuanto me costaria") ||
+      current.includes("cuanto me costaría")
     ) {
       return "CFO";
     }
@@ -116,6 +118,25 @@ export default async function handler(req, res) {
     }
 
     if (
+      stage === "ADS" ||
+      current.includes("ads") ||
+      current.includes("campaign") ||
+      current.includes("campana") ||
+      current.includes("campaña") ||
+      current.includes("trafico") ||
+      current.includes("tráfico") ||
+      current.includes("canal") ||
+      current.includes("canales") ||
+      current.includes("adquisicion") ||
+      current.includes("adquisición") ||
+      current.includes("audiencia") ||
+      current.includes("growth") ||
+      current.includes("marketing")
+    ) {
+      return "CMO";
+    }
+
+    if (
       current.includes("lead") ||
       current.includes("lista") ||
       current.includes("contactos") ||
@@ -140,18 +161,6 @@ export default async function handler(req, res) {
       current.includes("cómo funciona")
     ) {
       return "FORMACION";
-    }
-
-    if (
-      stage === "ADS" ||
-      current.includes("ads") ||
-      current.includes("campaign") ||
-      current.includes("campana") ||
-      current.includes("campaña") ||
-      current.includes("trafico") ||
-      current.includes("tráfico")
-    ) {
-      return "CMO";
     }
 
     return "CODIR";
@@ -297,6 +306,62 @@ CTA:
 ¿Te interesa que te lo envíe?`;
   }
 
+  function forceCmo(text, mode, originalMessage) {
+    if (mode !== "CMO") return text;
+
+    const current = normalizeText(originalMessage);
+
+    let channel = "outreach directo";
+    let objective = "conseguir conversaciones reales con potenciales clientes";
+    let metric = "número de respuestas";
+    let action = "envía hoy 10 mensajes directos al perfil de cliente más obvio";
+
+    if (
+      current.includes("linkedin") ||
+      current.includes("b2b") ||
+      current.includes("consultoria") ||
+      current.includes("consultoría") ||
+      current.includes("servicio")
+    ) {
+      channel = "LinkedIn o email directo";
+      objective = "abrir conversaciones con decisores";
+      metric = "respuestas positivas";
+      action = "haz hoy una lista de 10 decisores y envíales un mensaje corto";
+    } else if (
+      current.includes("instagram") ||
+      current.includes("tiktok") ||
+      current.includes("fitness") ||
+      current.includes("consumer") ||
+      current.includes("comunidad")
+    ) {
+      channel = "DM directo a usuarios potenciales";
+      objective = "validar interés real antes de hacer contenido o ads";
+      metric = "respuestas útiles";
+      action = "escribe hoy 10 mensajes cortos a personas que encajen con el perfil";
+    } else if (
+      current.includes("ads") ||
+      current.includes("campana") ||
+      current.includes("campaña")
+    ) {
+      channel = "1 campaña simple en un solo canal";
+      objective = "medir si el mensaje genera interés";
+      metric = "CTR o respuestas, no vanity metrics";
+      action = "lanza una sola pieza creativa con una sola promesa y mide solo una métrica";
+    }
+
+    return `1) Canal principal
+${channel}
+
+2) Objetivo
+${objective}
+
+3) Métrica única
+${metric}
+
+4) Acción
+${action}`;
+  }
+
   try {
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -336,6 +401,7 @@ CTA:
     finalText = forceCto(finalText, resolvedMode);
     finalText = forceOffer(finalText, resolvedMode);
     finalText = forceCopywriter(finalText, resolvedMode, message);
+    finalText = forceCmo(finalText, resolvedMode, message);
 
     return res.status(200).json({
       reply: finalText,
