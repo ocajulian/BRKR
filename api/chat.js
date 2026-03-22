@@ -66,7 +66,13 @@ export default async function handler(req, res) {
       current.includes("copy") ||
       current.includes("mensaje") ||
       current.includes("headline") ||
-      current.includes("cta")
+      current.includes("cta") ||
+      current.includes("email") ||
+      current.includes("landing") ||
+      current.includes("hook") ||
+      current.includes("reescribe") ||
+      current.includes("escribeme") ||
+      current.includes("escríbeme")
     ) {
       return "COPYWRITER";
     }
@@ -77,7 +83,8 @@ export default async function handler(req, res) {
       current.includes("costes") ||
       current.includes("precio") ||
       current.includes("pricing") ||
-      current.includes("cuanto cuesta")
+      current.includes("cuanto cuesta") ||
+      current.includes("cuánto cuesta")
     ) {
       return "CFO";
     }
@@ -92,7 +99,7 @@ export default async function handler(req, res) {
       current.includes("como vender") ||
       current.includes("cómo vender")
     ) {
-      return "OFERTA";
+      return "OFFER";
     }
 
     if (
@@ -217,8 +224,8 @@ Que no haya interés real
 Define en una frase qué vendes y envíalo hoy a 3 potenciales clientes`;
   }
 
-  function forceOferta(text, mode) {
-    if (mode !== "OFERTA") return text;
+  function forceOffer(text, mode) {
+    if (mode !== "OFFER") return text;
 
     return `1) Problema
 Define un problema específico y urgente.
@@ -237,6 +244,57 @@ Elige un canal directo para ofrecerlo.
 
 6) Acción
 Escribe el mensaje y envíalo hoy a 5 personas.`;
+  }
+
+  function forceCopywriter(text, mode, originalMessage) {
+    if (mode !== "COPYWRITER") return text;
+
+    const current = normalizeText(originalMessage);
+
+    if (current.includes("dm")) {
+      return `Hola [Nombre], estoy validando una propuesta para [tipo de cliente] que busca [resultado concreto]. No es una venta cerrada todavía: quiero comprobar si este problema te interesa de verdad. Si te encaja, te explico cómo lo plantearía en 2 líneas.`;
+    }
+
+    if (current.includes("email")) {
+      return `Asunto: pregunta rápida sobre [problema]
+
+Hola [Nombre],
+
+Estoy validando una propuesta para ayudar a [tipo de cliente] a conseguir [resultado concreto] sin [fricción principal].
+
+No te escribo para venderte algo cerrado todavía. Solo quiero saber si este problema es prioritario para ti ahora mismo.
+
+Si lo es, te envío la propuesta resumida en un mensaje.
+
+Un saludo,
+[Tu nombre]`;
+    }
+
+    if (current.includes("landing")) {
+      return `Hook:
+Consigue [resultado concreto] sin [fricción principal].
+
+Contexto:
+Una propuesta simple para [tipo de cliente] que necesita resolver [problema específico] sin perder tiempo en soluciones complejas.
+
+Propuesta:
+Te ayudamos a conseguir [resultado] con un enfoque directo, mínimo y accionable.
+
+CTA:
+Quiero ver la propuesta`;
+    }
+
+    return `Hook:
+[Resultado concreto] sin [fricción principal].
+
+Contexto:
+Esto es para [tipo de cliente] que necesita resolver [problema específico] sin complicarse.
+
+Propuesta:
+Una solución simple, directa y enfocada en conseguir [resultado].
+
+CTA:
+¿Te interesa que te lo envíe?`;
   }
 
   try {
@@ -276,7 +334,8 @@ Escribe el mensaje y envíalo hoy a 5 personas.`;
     let finalText = forceCodir(text, resolvedMode);
     finalText = forceCfo(finalText, resolvedMode);
     finalText = forceCto(finalText, resolvedMode);
-    finalText = forceOferta(finalText, resolvedMode);
+    finalText = forceOffer(finalText, resolvedMode);
+    finalText = forceCopywriter(finalText, resolvedMode, message);
 
     return res.status(200).json({
       reply: finalText,
