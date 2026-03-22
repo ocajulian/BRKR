@@ -92,7 +92,6 @@ export default async function handler(req, res) {
       "canal",
       "canales",
       "adquisicion",
-      "adquisicion",
       "audiencia",
       "marketing",
       "growth",
@@ -110,6 +109,7 @@ export default async function handler(req, res) {
       "trafico",
     ]);
 
+    // COPYWRITER
     if (
       current.includes("dm") ||
       current.includes("copy") ||
@@ -126,6 +126,7 @@ export default async function handler(req, res) {
       return "COPYWRITER";
     }
 
+    // CFO
     if (
       current.includes("cost") ||
       current.includes("coste") ||
@@ -139,6 +140,7 @@ export default async function handler(req, res) {
       return "CFO";
     }
 
+    // OFFER
     if (
       current.includes("oferta") ||
       current.includes("offer") ||
@@ -152,6 +154,7 @@ export default async function handler(req, res) {
       return "OFFER";
     }
 
+    // SCRAPPING
     if (
       current.includes("lead") ||
       current.includes("leads") ||
@@ -167,10 +170,12 @@ export default async function handler(req, res) {
       return "SCRAPPING";
     }
 
+    // CMO
     if (!cmoNegated && (stage === "ADS" || hasAny(current, cmoTerms))) {
       return "CMO";
     }
 
+    // PM
     if (
       current.includes("plan") ||
       current.includes("roadmap") ||
@@ -185,6 +190,7 @@ export default async function handler(req, res) {
       return "PM";
     }
 
+    // CTO
     if (
       current.includes("mvp") ||
       current.includes("build") ||
@@ -198,11 +204,17 @@ export default async function handler(req, res) {
       return "CTO";
     }
 
+    // FORMACION
     if (
       current.includes("explica") ||
       current.includes("teach") ||
       current.includes("como funciona") ||
-      current.includes("cómo funciona")
+      current.includes("cómo funciona") ||
+      current.includes("que significa") ||
+      current.includes("qué significa") ||
+      current.includes("aprender") ||
+      current.includes("ensename") ||
+      current.includes("enséñame")
     ) {
       return "FORMACION";
     }
@@ -455,6 +467,19 @@ Define el tipo exacto de decisor o contacto que necesitas.
 elige un nicho concreto y prepara una lista inicial de 10 contactos verificables`;
   }
 
+  function forceFormacion(text, mode) {
+    if (mode !== "FORMACION") return text;
+
+    return `1) Concepto mínimo
+Explica la idea en una sola definición corta y práctica.
+
+2) Ejemplo simple
+Da un ejemplo básico que ayude a entenderlo sin teoría larga.
+
+3) Acción
+Haz ahora una tarea pequeña para aplicar el concepto inmediatamente.`;
+  }
+
   try {
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -497,6 +522,7 @@ elige un nicho concreto y prepara una lista inicial de 10 contactos verificables
     finalText = forceCmo(finalText, resolvedMode, message);
     finalText = forcePm(finalText, resolvedMode, message);
     finalText = forceScrapping(finalText, resolvedMode);
+    finalText = forceFormacion(finalText, resolvedMode);
 
     return res.status(200).json({
       reply: finalText,
