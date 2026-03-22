@@ -154,6 +154,23 @@ export default async function handler(req, res) {
       return "OFFER";
     }
 
+    // SCRAPPING — antes que CMO
+    if (
+      current.includes("lead") ||
+      current.includes("leads") ||
+      current.includes("lista") ||
+      current.includes("contactos") ||
+      current.includes("decisores") ||
+      current.includes("decision makers") ||
+      current.includes("decision maker") ||
+      current.includes("prospectos") ||
+      current.includes("prospects") ||
+      current.includes("linkedin") ||
+      current.includes("base de datos de contactos")
+    ) {
+      return "SCRAPPING";
+    }
+
     // CMO
     if (
       !cmoNegated &&
@@ -175,23 +192,6 @@ export default async function handler(req, res) {
       current.includes("prioridades")
     ) {
       return "PM";
-    }
-
-    // SCRAPPING
-    if (
-      current.includes("lead") ||
-      current.includes("leads") ||
-      current.includes("lista") ||
-      current.includes("contactos") ||
-      current.includes("decisores") ||
-      current.includes("decision makers") ||
-      current.includes("decision maker") ||
-      current.includes("prospectos") ||
-      current.includes("prospects") ||
-      current.includes("linkedin") ||
-      current.includes("base de datos de contactos")
-    ) {
-      return "SCRAPPING";
     }
 
     // CTO
