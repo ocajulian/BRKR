@@ -69,27 +69,36 @@ export default async function handler(req, res) {
     history: sanitizedHistory,
   });
 
-  const inputMessages = [
+  // 🔥 CLAVE: construir mensajes con prioridad correcta
+  const systemMessages = [
     { role: "system", content: MASTER_PROMPT },
     { role: "system", content: getLanguagePrompt(language) },
-    ...(onboardingState
-      ? [
-          {
-            role: "system",
-            content:
-              ONBOARDING_PROMPTS[onboardingState] ||
-              ONBOARDING_PROMPTS.WELCOME,
-          },
-        ]
-      : []),
-    {
+  ];
+
+  if (onboardingState) {
+    // 👉 onboarding manda → NO se mete modo
+    systemMessages.push({
+      role: "system",
+      content:
+        ONBOARDING_PROMPTS[onboardingState] ||
+        ONBOARDING_PROMPTS.WELCOME,
+    });
+  } else {
+    // 👉 solo si NO onboarding → modo + stage
+    systemMessages.push({
       role: "system",
       content: MODE_PROMPTS[resolvedMode] || MODE_PROMPTS.CODIR,
-    },
-    {
+    });
+
+    systemMessages.push({
       role: "system",
-      content: STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA,
-    },
+      content:
+        STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA,
+    });
+  }
+
+  const inputMessages = [
+    ...systemMessages,
     ...sanitizedHistory,
     { role: "user", content: message },
   ];
@@ -129,7 +138,7 @@ export default async function handler(req, res) {
       "No pude generar respuesta.";
 
     const finalText = onboardingState
-      ? text
+      ? text // 👉 NO enforcement en onboarding
       : applyModeEnforcement(text, resolvedMode, message);
 
     return res.status(200).json({
