@@ -69,22 +69,18 @@ export default async function handler(req, res) {
     history: sanitizedHistory,
   });
 
-  // 🔥 CLAVE: construir mensajes con prioridad correcta
   const systemMessages = [
     { role: "system", content: MASTER_PROMPT },
     { role: "system", content: getLanguagePrompt(language) },
   ];
 
   if (onboardingState) {
-    // 👉 onboarding manda → NO se mete modo
     systemMessages.push({
       role: "system",
       content:
-        ONBOARDING_PROMPTS[onboardingState] ||
-        ONBOARDING_PROMPTS.WELCOME,
+        ONBOARDING_PROMPTS[onboardingState] || ONBOARDING_PROMPTS.WELCOME,
     });
   } else {
-    // 👉 solo si NO onboarding → modo + stage
     systemMessages.push({
       role: "system",
       content: MODE_PROMPTS[resolvedMode] || MODE_PROMPTS.CODIR,
@@ -92,8 +88,7 @@ export default async function handler(req, res) {
 
     systemMessages.push({
       role: "system",
-      content:
-        STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA,
+      content: STAGE_PROMPTS[normalizedStage] || STAGE_PROMPTS.IDEA,
     });
   }
 
@@ -137,9 +132,29 @@ export default async function handler(req, res) {
         : "") ||
       "No pude generar respuesta.";
 
-    const finalText = onboardingState
-      ? text // 👉 NO enforcement en onboarding
-      : applyModeEnforcement(text, resolvedMode, message);
+    let finalText;
+
+    if (onboardingState === "WELCOME") {
+      finalText =
+        "BRKR no es un chat general.\n" +
+        "Te ayuda a tomar decisiones y avanzar en ideas de negocio.\n\n" +
+        "Para empezar, elige una opción:\n" +
+        "1) Tengo una idea y quiero validarla\n" +
+        "2) Tengo algo y quiero simplificarlo o venderlo\n" +
+        "3) No sé por dónde empezar\n\n" +
+        "Responde con 1, 2 o 3.";
+    } else if (onboardingState === "CONFUSION") {
+      finalText =
+        "Perfecto. Vamos simple.\n\n" +
+        "BRKR te ayuda a decidir qué hacer en tu negocio.\n\n" +
+        "¿Cuál de estas situaciones te describe mejor?\n" +
+        "A) Tengo una idea\n" +
+        "B) Ya tengo algo en marcha\n" +
+        "C) Estoy bloqueado y no sé qué hacer\n\n" +
+        "Responde solo con A, B o C.";
+    } else {
+      finalText = applyModeEnforcement(text, resolvedMode, message);
+    }
 
     return res.status(200).json({
       reply: finalText,
