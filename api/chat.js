@@ -3,7 +3,6 @@ import {
   STAGE_ALIASES,
   STAGE_PROMPTS,
   MODE_PROMPTS,
-  ONBOARDING_PROMPTS,
   VALID_MODES,
   getLanguagePrompt,
 } from "../lib/brkr-prompts.js";
@@ -16,167 +15,106 @@ import {
 import { applyModeEnforcement } from "../lib/brkr-mode-enforcement.js";
 
 /* =========================
-   HELPERS
+   STATE MACHINE
 ========================= */
 
-function normalizeChoice(value) {
-  return String(value || "").trim().toUpperCase();
-}
+function getStateFromHistory(history) {
+  if (!Array.isArray(history)) return "INIT";
 
-function isWelcomeChoice(value) {
-  const c = normalizeChoice(value);
-  return c === "1" || c === "2" || c === "3";
-}
-
-function isConfusionChoice(value) {
-  const c = normalizeChoice(value);
-  return c === "A" || c === "B" || c === "C";
-}
-
-function getLastAssistantMessage(history) {
-  const list = Array.isArray(history) ? [...history] : [];
-  for (let i = list.length - 1; i >= 0; i--) {
-    const m = list[i];
-    if (m?.role === "assistant" && m.content) return m.content;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const m = history[i];
+    if (m.role === "assistant" && m.meta?.conversation_state) {
+      return m.meta.conversation_state;
+    }
   }
-  return "";
-}
 
-function hasCompletedOnboarding(history) {
-  if (!Array.isArray(history)) return false;
-
-  return history.some((msg) => {
-    if (msg.role !== "assistant") return false;
-    if (!msg.meta) return false;
-
-    return (
-      msg.meta.onboarding_state &&
-      msg.meta.onboarding_state.startsWith("SELECTION")
-    );
-  });
+  return "INIT";
 }
 
 /* =========================
-   SELECTION DETECTION
+   HELPERS
 ========================= */
 
-function detectSelectionState({ message, history }) {
-  const choice = normalizeChoice(message);
-  const last = getLastAssistantMessage(history).toLowerCase();
+function normalize(value) {
+  return String(value || "").trim().toUpperCase();
+}
 
-  const fromWelcome =
-    last.includes("1, 2 o 3") ||
-    last.includes("1, 2 or 3") ||
-    last.includes("1, 2 ou 3");
+function isChoice(value, list) {
+  return list.includes(normalize(value));
+}
 
-  const fromConfusion =
-    last.includes("a, b o c") ||
-    last.includes("a, b or c") ||
-    last.includes("a, b ou c");
+/* =========================
+   STATE TRANSITIONS
+========================= */
 
-  if (fromWelcome && isWelcomeChoice(choice)) {
-    if (choice === "1") return "WELCOME_IDEA";
-    if (choice === "2") return "WELCOME_OFFER";
-    if (choice === "3") return "WELCOME_DIAGNOSIS";
+function handleStateTransition({ message, state }) {
+  const input = normalize(message);
+
+  if (state === "INIT") {
+    if (["1"].includes(input)) {
+      return { next: "IDEA_CLARIFICATION" };
+    }
+    if (["2"].includes(input)) {
+      return { next: "OFFER_CLARIFICATION" };
+    }
+    if (["3"].includes(input)) {
+      return { next: "DIAGNOSIS" };
+    }
   }
 
-  if (fromConfusion && isConfusionChoice(choice)) {
-    if (choice === "A") return "CONFUSION_IDEA";
-    if (choice === "B") return "CONFUSION_EXISTING";
-    if (choice === "C") return "CONFUSION_BLOCKED";
+  if (state === "DIAGNOSIS") {
+    if (["1", "A"].includes(input)) {
+      return { next: "IDEA_CLARIFICATION" };
+    }
+    if (["2", "B"].includes(input)) {
+      return { next: "OFFER_CLARIFICATION" };
+    }
+    if (["3", "C"].includes(input)) {
+      return { next: "DIAGNOSIS" };
+    }
   }
 
   return null;
 }
 
 /* =========================
-   SELECTION RESPONSES
+   STATE RESPONSES
 ========================= */
 
-function buildSelectionResponse(state, language) {
-  const lang = language === "es" || language === "fr" ? language : "en";
+function buildStateResponse(state, language) {
+  const lang = language === "fr" ? "fr" : language === "es" ? "es" : "en";
 
   const responses = {
     es: {
-      WELCOME_IDEA: {
-        text:
-          "Perfecto.\n\n" +
-          "Vamos a aterrizar tu idea.\n\n" +
-          "Escríbeme en una frase:\n" +
-          "qué quieres vender, para quién y qué problema resuelve.",
-        meta: {
-          stage_used: "IDEA",
-          mode_used: "CODIR",
-          onboarding_state: "SELECTION_IDEA",
-        },
-      },
-      WELCOME_OFFER: {
-        text:
-          "Perfecto.\n\n" +
-          "Vamos a simplificar lo que ya tienes.\n\n" +
-          "Dime:\n" +
-          "1) qué vendes\n" +
-          "2) a quién\n" +
-          "3) qué falla",
-        meta: {
-          stage_used: "OFERTA",
-          mode_used: "OFFER",
-          onboarding_state: "SELECTION_OFFER",
-        },
-      },
-      WELCOME_DIAGNOSIS: {
-        text:
-          "Perfecto.\n\n" +
-          "Vamos a ubicarte.\n\n" +
-          "1) idea sin cliente\n" +
-          "2) cliente sin oferta\n" +
-          "3) oferta sin ventas\n\n" +
-          "Escribe 1, 2 o 3.",
-        meta: {
-          stage_used: "IDEA",
-          mode_used: "CODIR",
-          onboarding_state: "SELECTION_DIAGNOSIS",
-        },
-      },
-      CONFUSION_IDEA: {
-        text:
-          "Bien.\n\n" +
-          "Dime en una frase:\n" +
-          "qué quieres hacer, para quién y qué problema ves.",
-        meta: {
-          stage_used: "IDEA",
-          mode_used: "CODIR",
-          onboarding_state: "SELECTION_IDEA",
-        },
-      },
-      CONFUSION_EXISTING: {
-        text:
-          "Bien.\n\n" +
-          "Dime:\n" +
-          "qué vendes, a quién y qué quieres mejorar.",
-        meta: {
-          stage_used: "OFERTA",
-          mode_used: "OFFER",
-          onboarding_state: "SELECTION_EXISTING",
-        },
-      },
-      CONFUSION_BLOCKED: {
-        text:
-          "Perfecto.\n\n" +
-          "1) no sé qué idea\n" +
-          "2) no sé a quién vender\n" +
-          "3) no sé qué hacer\n\n" +
-          "Escribe 1, 2 o 3.",
-        meta: {
-          stage_used: "IDEA",
-          mode_used: "CODIR",
-          onboarding_state: "SELECTION_BLOCKED",
-        },
-      },
+      INIT:
+        "¡Hola! Soy BRKR.\n\n" +
+        "Te ayudo a avanzar en tu negocio sin perder tiempo.\n\n" +
+        "Elige una opción:\n" +
+        "1) Tengo una idea\n" +
+        "2) Ya tengo algo\n" +
+        "3) Estoy bloqueado\n\n" +
+        "Responde con 1, 2 o 3.",
+
+      IDEA_CLARIFICATION:
+        "Perfecto.\n\n" +
+        "Dime en una frase:\n" +
+        "qué quieres vender, para quién y qué problema resuelve.",
+
+      OFFER_CLARIFICATION:
+        "Perfecto.\n\n" +
+        "Dime:\n" +
+        "qué vendes, a quién y qué quieres mejorar.",
+
+      DIAGNOSIS:
+        "Vamos a ubicarte.\n\n" +
+        "1) idea sin cliente\n" +
+        "2) cliente sin oferta\n" +
+        "3) oferta sin ventas\n\n" +
+        "Responde 1, 2 o 3.",
     },
   };
 
-  return responses[lang]?.[state] || null;
+  return responses[lang][state] || responses["es"][state];
 }
 
 /* =========================
@@ -205,57 +143,51 @@ export default async function handler(req, res) {
     ? history.slice(-12)
     : [];
 
-  const resolvedMode =
-    mode === "AUTO"
-      ? detectAutoMode({ message, stage: normalizedStage })
-      : mode;
+  const currentState = getStateFromHistory(sanitizedHistory);
 
-  const onboardingState = detectOnboardingState({
+  const transition = handleStateTransition({
     message,
-    history: sanitizedHistory,
-  });
-
-  const onboardingCompleted = hasCompletedOnboarding(sanitizedHistory);
-
-  const selectionState = detectSelectionState({
-    message,
-    history: sanitizedHistory,
+    state: currentState,
   });
 
   /* =========================
-     PRIORITY 1: SELECTION
+     STATE TRANSITION RESPONSE
   ========================= */
 
-  if (selectionState) {
-    const response = buildSelectionResponse(selectionState, language);
-    if (response) {
-      return res.json({
-        reply: response.text,
-        meta: response.meta,
-      });
-    }
-  }
+  if (transition) {
+    const text = buildStateResponse(transition.next, language);
 
-  /* =========================
-     PRIORITY 2: ONBOARDING (ONLY ONCE)
-  ========================= */
-
-  if (onboardingState && !onboardingCompleted) {
     return res.json({
-      reply:
-        "¡Hola! Soy BRKR, tu aliado para tomar decisiones de negocio.\n\n" +
-        "Elige una opción:\n" +
-        "1) Validar idea\n" +
-        "2) Mejorar algo existente\n" +
-        "3) No sé qué hacer\n\n" +
-        "Responde con 1, 2 o 3.",
-      meta: null,
+      reply: text,
+      meta: {
+        conversation_state: transition.next,
+        stage_used: transition.next.includes("OFFER") ? "OFERTA" : "IDEA",
+        mode_used: transition.next.includes("OFFER") ? "OFFER" : "CODIR",
+      },
     });
   }
 
   /* =========================
-     NORMAL FLOW
+     INIT STATE (ONBOARDING ONCE)
   ========================= */
+
+  if (currentState === "INIT") {
+    return res.json({
+      reply: buildStateResponse("INIT", language),
+      meta: {
+        conversation_state: "INIT",
+      },
+    });
+  }
+
+  /* =========================
+     NORMAL AI FLOW (CONTROLLED)
+  ========================= */
+
+  const resolvedMode =
+    mode === "AUTO"
+      ? detectAutoMode({ message, stage: normalizedStage })
+      : mode;
 
   const inputMessages = [
     { role: "system", content: MASTER_PROMPT },
@@ -291,6 +223,7 @@ export default async function handler(req, res) {
     return res.json({
       reply: applyModeEnforcement(text, resolvedMode, message),
       meta: {
+        conversation_state: currentState,
         stage_used: normalizedStage,
         mode_used: resolvedMode,
       },
