@@ -133,6 +133,7 @@ export default async function handler(req, res) {
       "No pude generar respuesta.";
 
     let finalText;
+    let finalMeta;
 
     if (onboardingState === "WELCOME") {
       finalText =
@@ -143,6 +144,8 @@ export default async function handler(req, res) {
         "2) Tengo algo y quiero simplificarlo o venderlo\n" +
         "3) No sé por dónde empezar\n\n" +
         "Responde con 1, 2 o 3.";
+
+      finalMeta = null;
     } else if (onboardingState === "CONFUSION") {
       finalText =
         "Perfecto. Vamos simple.\n\n" +
@@ -152,20 +155,23 @@ export default async function handler(req, res) {
         "B) Ya tengo algo en marcha\n" +
         "C) Estoy bloqueado y no sé qué hacer\n\n" +
         "Responde solo con A, B o C.";
+
+      finalMeta = null;
     } else {
       finalText = applyModeEnforcement(text, resolvedMode, message);
-    }
-
-    return res.status(200).json({
-      reply: finalText,
-      meta: {
+      finalMeta = {
         stage_requested: normalizedStageInput,
         stage_used: normalizedStage,
         mode_requested: safeRequestedMode,
         mode_used: resolvedMode,
         language_used: language,
-        onboarding_state: onboardingState || null,
-      },
+        onboarding_state: null,
+      };
+    }
+
+    return res.status(200).json({
+      reply: finalText,
+      meta: finalMeta,
     });
   } catch (e) {
     return res.status(500).json({ reply: String(e) });
