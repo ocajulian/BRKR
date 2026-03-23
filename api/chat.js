@@ -517,6 +517,74 @@ function buildBlockedRoutingResponse(choice, language) {
   return null;
 }
 
+function hasExistingBusinessSignal(text) {
+  const existingTerms = [
+    "vendo ",
+    "ya vendo",
+    "vendi",
+    "vendemos",
+    "tengo clientes",
+    "tengo una oferta",
+    "mi oferta",
+    "mi servicio",
+    "mi producto",
+    "no convierto",
+    "no estoy convirtiendo",
+    "no vendo",
+    "vendo asesoria",
+    "vendo asesoria",
+    "vendo servicios",
+    "vendo consultoria",
+    "precio",
+    "conversión",
+    "conversion",
+    "cerrar ventas",
+    "cierro ventas",
+    "me compran",
+    "no me compran",
+    "oferta",
+    "servicio",
+    "consultoria",
+    "asesoria",
+  ];
+
+  return existingTerms.some((term) => text.includes(term));
+}
+
+function resolveDirectEntryPlan({
+  message,
+  normalizedStage,
+  safeRequestedMode,
+}) {
+  const current = normalizeText(message);
+
+  if (hasExistingBusinessSignal(current)) {
+    return {
+      systemStatePrompt:
+        "ESTADO DIRECT_ENTRY_OFFER: el usuario ya trae algo existente o un problema claro de oferta/conversión. No reinicies desde idea abstracta. No mandes a validar problema desde cero. Responde corto y estructurado. Formato obligatorio: 1) qué está vendiendo realmente 2) dónde está la fricción principal 3) siguiente ajuste concreto. No hagas más de una pregunta.",
+      stageUsed: "OFERTA",
+      modeUsed: "OFFER",
+      nextState: "OFFER_EXECUTION",
+    };
+  }
+
+  const fallbackMode =
+    safeRequestedMode === "AUTO"
+      ? detectAutoMode({ message, stage: normalizedStage })
+      : safeRequestedMode;
+
+  const fallbackStage =
+    fallbackMode === "OFFER" ? "OFERTA" : normalizedStage;
+
+  return {
+    systemStatePrompt:
+      "ESTADO DIRECT_ENTRY: el usuario entró con contexto útil sin pasar por menú. No lo mandes a onboarding. Responde con decisión o siguiente paso real.",
+    stageUsed: fallbackStage,
+    modeUsed: fallbackMode,
+    nextState: fallbackStage === "OFERTA" ? "OFFER_EXECUTION" : "IDEA_EXECUTION",
+  };
+}
+
 function resolveStatePlan({
   currentState,
   normalizedStage,
@@ -563,21 +631,21 @@ function resolveStatePlan({
     };
   }
 
-  const fallbackMode =
-    safeRequestedMode === "AUTO"
-      ? detectAutoMode({ message, stage: normalizedStage })
-      : safeRequestedMode;
+  if (currentState === "BLOCKED_DIAGNOSIS") {
+    return {
+      systemStatePrompt:
+        "ESTADO BLOCKED_DIAGNOSIS: el usuario está bloqueado. Tu objetivo es ubicar el cuello de botella real y dar un siguiente paso mínimo. No reinicies onboarding.",
+      stageUsed: "IDEA",
+      modeUsed: "CODIR",
+      nextState: "BLOCKED_DIAGNOSIS",
+    };
+  }
 
-  const fallbackStage =
-    fallbackMode === "OFFER" ? "OFERTA" : normalizedStage;
-
-  return {
-    systemStatePrompt:
-      "ESTADO DIRECT_ENTRY: el usuario entró con contexto útil sin pasar por menú. No lo mandes a onboarding. Responde con decisión o siguiente paso real.",
-    stageUsed: fallbackStage,
-    modeUsed: fallbackMode,
-    nextState: fallbackStage === "OFERTA" ? "OFFER_EXECUTION" : "IDEA_EXECUTION",
-  };
+  return resolveDirectEntryPlan({
+    message,
+    normalizedStage,
+    safeRequestedMode,
+  });
 }
 
 export default async function handler(req, res) {
@@ -636,26 +704,34 @@ export default async function handler(req, res) {
       }
     }
 
-    const shouldShowWelcome =
-      onboardingState === "WELCOME" ||
-      onboardingState === "CONFUSION" ||
-      normalizedMessage === "hola" ||
-      normalizedMessage === "hello" ||
-      normalizedMessage === "bonjour";
+    const looksLikeDirectEntry =
+      normalizedMessage.split(" ").filter(Boolean).length >= 6 &&
+      onboardingState === null;
 
-    if (shouldShowWelcome) {
-      const promptType = onboardingState === "CONFUSION" ? "CONFUSION" : "WELCOME";
-      return res.status(200).json({
-        reply: buildWelcomePrompt(language, promptType),
-        meta: buildMeta({
-          conversationState: "INIT",
-          stageUsed: null,
-          modeUsed: null,
-          languageUsed: language,
-          showContext: false,
-          onboardingState: promptType,
-        }),
-      });
+    if (!looksLikeDirectEntry) {
+      const shouldShowWelcome =
+        onboardingState === "WELCOME" ||
+        onboardingState === "CONFUSION" ||
+        normalizedMessage === "hola" ||
+        normalizedMessage === "hello" ||
+        normalizedMessage === "bonjour";
+
+      if (shouldShowWelcome) {
+        const promptType =
+          onboardingState === "CONFUSION" ? "CONFUSION" : "WELCOME";
+
+        return res.status(200).json({
+          reply: buildWelcomePrompt(language, promptType),
+          meta: buildMeta({
+            conversationState: "INIT",
+            stageUsed: null,
+            modeUsed: null,
+            languageUsed: language,
+            showContext: false,
+            onboardingState: promptType,
+          }),
+        });
+      }
     }
   }
 
